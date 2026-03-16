@@ -1,0 +1,195 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* BackTest Design System
+   Dark Slate + Vibrant Emerald Green
+   Fonts: Sora (headings) + DM Sans (body)
+*/
+
+@layer base {
+  :root {
+    /* Light mode - Clean and professional */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+
+    /* Primary - Deep Slate */
+    --primary: 240 10% 15%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary */
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 10% 10%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 5% 45%;
+
+    /* Accent - Vibrant Emerald */
+    --accent: 152 76% 46%;
+    --accent-foreground: 240 10% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 76% 46%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 45 93% 47%;
+    --warning-foreground: 240 10% 10%;
+
+    --danger: 0 72% 51%;
+    --danger-foreground: 0 0% 100%;
+
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 152 76% 46%;
+
+    --radius: 0.75rem;
+
+    --chart-profit: 152 76% 46%;
+    --chart-loss: 0 72% 51%;
+    --chart-neutral: 240 5% 45%;
+    --chart-primary: 240 10% 15%;
+    --chart-secondary: 152 76% 46%;
+
+    --sidebar-background: 240 10% 10%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 152 76% 50%;
+    --sidebar-primary-foreground: 240 10% 10%;
+    --sidebar-accent: 240 10% 18%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 240 10% 18%;
+    --sidebar-ring: 152 76% 50%;
+  }
+
+  .dark {
+    /* Dark mode - Premium dark theme */
+    --background: 240 10% 4%;
+    --foreground: 0 0% 95%;
+
+    --card: 240 10% 8%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 240 10% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    /* Primary - Emerald accent for dark mode */
+    --primary: 152 76% 46%;
+    --primary-foreground: 240 10% 4%;
+
+    /* Secondary */
+    --secondary: 240 10% 15%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 240 10% 15%;
+    --muted-foreground: 240 5% 65%;
+
+    /* Accent - Vibrant Emerald */
+    --accent: 152 76% 46%;
+    --accent-foreground: 240 10% 4%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 76% 46%;
+    --success-foreground: 240 10% 4%;
+
+    --warning: 45 93% 47%;
+    --warning-foreground: 240 10% 4%;
+
+    --danger: 0 72% 51%;
+    --danger-foreground: 0 0% 100%;
+
+    --border: 240 10% 20%;
+    --input: 240 10% 20%;
+    --ring: 152 76% 46%;
+
+    --chart-profit: 152 76% 46%;
+    --chart-loss: 0 72% 51%;
+    --chart-neutral: 240 5% 65%;
+    --chart-primary: 152 76% 46%;
+    --chart-secondary: 200 80% 60%;
+
+    --sidebar-background: 240 10% 6%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 152 76% 50%;
+    --sidebar-primary-foreground: 240 10% 4%;
+    --sidebar-accent: 240 10% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 240 10% 15%;
+    --sidebar-ring: 152 76% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Sora', sans-serif;
+  }
+}
+
+@layer components {
+  .font-heading {
+    font-family: 'Sora', sans-serif;
+  }
+
+  .font-body {
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .profit-text {
+    color: hsl(var(--success));
+  }
+
+  .loss-text {
+    color: hsl(var(--danger));
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(152, 76%, 50%), hsl(152, 76%, 65%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 40px -10px hsl(152, 76%, 50%, 0.5);
+  }
+
+  .hero-gradient {
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(152, 76%, 50%, 0.15), transparent);
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
