@@ -36,19 +36,22 @@ export const AIStrategyGenerator = ({ onGenerate }: AIStrategyGeneratorProps) =>
         throw new Error(error.message || "Failed to generate strategy");
       }
 
-      if (data.error) {
-        throw new Error(data.error);
+      // Handle standardized response format
+      if (data?.success === false) {
+        throw new Error(data.error || "Failed to generate strategy");
       }
 
-      if (!data.name || !data.entryRules || !data.exitRules) {
+      const strategyData = data?.data || data;
+
+      if (!strategyData?.name || !strategyData?.entryRules || !strategyData?.exitRules) {
         throw new Error("Invalid strategy response");
       }
 
       onGenerate({
-        name: data.name,
-        description: data.description || "",
-        entryRules: data.entryRules,
-        exitRules: data.exitRules,
+        name: strategyData.name,
+        description: strategyData.description || "",
+        entryRules: strategyData.entryRules,
+        exitRules: strategyData.exitRules,
       });
 
       toast.success("Strategy generated! Review and customize the rules below.");

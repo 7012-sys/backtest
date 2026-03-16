@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_strategy_cache: {
+        Row: {
+          created_at: string
+          id: string
+          prompt: string
+          prompt_hash: string
+          strategy_json: Json
+          usage_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prompt: string
+          prompt_hash: string
+          strategy_json: Json
+          usage_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prompt?: string
+          prompt_hash?: string
+          strategy_json?: Json
+          usage_count?: number
+        }
+        Relationships: []
+      }
+      ai_usage: {
+        Row: {
+          created_at: string
+          id: string
+          request_count: number
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          request_count?: number
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          request_count?: number
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       backtests: {
         Row: {
           confidence_score: number | null
@@ -219,28 +270,40 @@ export type Database = {
       }
       market_data_cache: {
         Row: {
+          close: number
           created_at: string
-          data: Json
-          date: string
+          high: number
           id: string
+          low: number
+          open: number
           symbol: string
           timeframe: string
+          timestamp: string
+          volume: number
         }
         Insert: {
+          close: number
           created_at?: string
-          data: Json
-          date: string
+          high: number
           id?: string
+          low: number
+          open: number
           symbol: string
           timeframe: string
+          timestamp: string
+          volume?: number
         }
         Update: {
+          close?: number
           created_at?: string
-          data?: Json
-          date?: string
+          high?: number
           id?: string
+          low?: number
+          open?: number
           symbol?: string
           timeframe?: string
+          timestamp?: string
+          volume?: number
         }
         Relationships: []
       }

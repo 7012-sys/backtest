@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     const { data: { user: caller } } = await supabaseAdmin.auth.getUser(token);
     
     if (!caller) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!roleCheck) {
-      return new Response(JSON.stringify({ error: "Admin access required" }), {
+      return new Response(JSON.stringify({ success: false, error: "Admin access required" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     // action: "disable" | "enable" | "delete"
 
     if (!userId || !action) {
-      return new Response(JSON.stringify({ error: "userId and action required" }), {
+      return new Response(JSON.stringify({ success: false, error: "userId and action required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
 
     // Prevent admin from deleting themselves
     if (userId === caller.id) {
-      return new Response(JSON.stringify({ error: "Cannot modify your own account" }), {
+      return new Response(JSON.stringify({ success: false, error: "Cannot modify your own account" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -114,13 +114,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ error: "Invalid action" }), {
+    return new Response(JSON.stringify({ success: false, error: "Invalid action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
     console.error("Admin delete user error:", error);
-    return new Response(JSON.stringify({ error: error?.message || "Unknown error" }), {
+    return new Response(JSON.stringify({ success: false, error: error?.message || "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

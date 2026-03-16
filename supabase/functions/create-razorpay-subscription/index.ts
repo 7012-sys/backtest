@@ -141,9 +141,12 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        subscription_id: subscription.id,
-        short_url: subscription.short_url,
-        key_id: RAZORPAY_KEY_ID,
+        success: true,
+        data: {
+          subscription_id: subscription.id,
+          short_url: subscription.short_url,
+          key_id: RAZORPAY_KEY_ID,
+        },
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -151,9 +154,9 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error("Error:", error.message);
+    console.error("Error:", error?.message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ success: false, error: error?.message || "Unknown error" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,

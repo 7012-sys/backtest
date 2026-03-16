@@ -5,8 +5,6 @@ import { OHLCV, StrategyRule } from './types';
 import { getIndicatorValue } from './indicators';
 
 // ─── AI Rule Normalizer ──────────────────────────────────────────────────────
-// Maps AI-generated indicator names and field keys → engine-compatible format
-
 const AI_INDICATOR_MAP: Record<string, string> = {
   'sma': 'sma_20',
   'ema': 'ema_20',
@@ -70,20 +68,15 @@ export function normalizeAIRules(rules: any[]): StrategyRule[] {
     const rawIndicator = rule.indicator;
     const indicatorKey = (typeof rawIndicator === 'string' ? rawIndicator : String(rawIndicator ?? '')).toLowerCase().trim();
     
-    // Handle period-based indicator (e.g., indicator="SMA" with period=50)
     const period = rule.period ?? null;
     let mappedIndicator = AI_INDICATOR_MAP[indicatorKey] || indicatorKey || 'price';
     
-    // If rule has a period, try to map to specific variant (e.g., sma_50)
     if (period && ['sma', 'ema', 'rsi'].includes(indicatorKey)) {
-      const specificKey = `${indicatorKey}_${period}`;
-      mappedIndicator = specificKey;
+      mappedIndicator = `${indicatorKey}_${period}`;
     }
 
-    // Normalize value: can be number, string indicator reference, or object {period, indicator}
     let value: string | number = normalizeRuleValue(rule.value ?? rule.target ?? 0);
 
-    // Normalize condition aliases
     const conditionMap: Record<string, string> = {
       'greater than': 'greater_than',
       'less than': 'less_than',
@@ -96,7 +89,6 @@ export function normalizeAIRules(rules: any[]): StrategyRule[] {
     const rawCondition = (typeof rule.condition === 'string' ? rule.condition : String(rule.condition ?? 'greater_than')).toLowerCase().trim();
     const condition = conditionMap[rawCondition] || rawCondition;
 
-    // Map `connector` → `logic`
     const logic = rule.logic || rule.connector || undefined;
 
     return {
@@ -108,22 +100,16 @@ export function normalizeAIRules(rules: any[]): StrategyRule[] {
   });
 }
 
-// Convert complex value types into engine-compatible string/number
 function normalizeRuleValue(value: any): string | number {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
     const num = parseFloat(value);
     if (!isNaN(num) && value.trim() === String(num)) return num;
-    // Map string indicator references through the AI map
     const lower = value.toLowerCase().trim();
     return AI_INDICATOR_MAP[lower] || lower;
   }
-  // Object value like {period: 200, indicator: "SMA"} or {type: "stop_loss", ...}
   if (typeof value === 'object' && value !== null) {
-    if (value.type === 'stop_loss' || value.type === 'take_profit') {
-      // These are handled by the exit logic, return 0 as placeholder
-      return 0;
-    }
+    if (value.type === 'stop_loss' || value.type === 'take_profit') return 0;
     if (value.indicator && value.period) {
       const indKey = (typeof value.indicator === 'string' ? value.indicator : String(value.indicator)).toLowerCase().trim();
       return `${indKey}_${value.period}`;
@@ -159,7 +145,6 @@ function evaluateCondition(current: number, condition: string, target: number): 
     case 'equals':
       return Math.abs(current - target) < 0.01;
     case 'increases_by':
-      // Assumes target is a percentage
       return current > 0 && (current / target) >= (1 + target / 100);
     case 'decreases_by':
       return current > 0 && (current / target) <= (1 - target / 100);
@@ -168,22 +153,14 @@ function evaluateCondition(current: number, condition: string, target: number): 
   }
 }
 
-// Parse rule value - can be a number or another indicator
 function parseRuleValue(
   value: string | number,
   data: OHLCV[],
   index: number
 ): number {
-  if (typeof value === 'number') {
-    return value;
-  }
-  
+  if (typeof value === 'number') return value;
   const numValue = parseFloat(value);
-  if (!isNaN(numValue)) {
-    return numValue;
-  }
-  
-  // Value is an indicator reference
+  if (!isNaN(numValue)) return numValue;
   return getIndicatorValue(data, value, index);
 }
 
@@ -197,15 +174,11 @@ export function checkRule(
   const rightValue = parseRuleValue(rule.value, data, index);
   const isMet = evaluateCondition(leftValue, rule.condition, rightValue);
   
-  return {
-    leftValue,
-    rightValue,
-    condition: rule.condition,
-    isMet,
-  };
+  return { leftValue, rightValue, condition: rule.condition, isMet };
 }
 
 // Check if all entry rules are satisfied (supports AND/OR logic)
+// Uses candle HIGH for breakout-above checks, candle LOW for breakout-below
 export function checkEntrySignal(
   data: OHLCV[],
   index: number,
@@ -218,7 +191,8 @@ export function checkEntrySignal(
   
   for (let i = 0; i < rules.length; i++) {
     const rule = rules[i];
-    const { isMet } = checkRule(data, index, rule);
+    // For entry signals: use high for crosses_above/greater_than, low for crosses_below/less_than
+    const { isMet } = checkRuleWithHighLow(data, index, rule);
     
     if (i === 0) {
       result = isMet;
@@ -230,7 +204,6 @@ export function checkEntrySignal(
       }
     }
     
-    // Update logic for next iteration
     if (rule.logic) {
       currentLogic = rule.logic;
     }
@@ -239,7 +212,43 @@ export function checkEntrySignal(
   return result;
 }
 
-// Check if exit conditions are met
+/**
+ * Enhanced rule check that uses candle high/low for price-based comparisons.
+ * - For "crosses_above" / "greater_than" → check candle.high against target
+ * - For "crosses_below" / "less_than" → check candle.low against target
+ * - For indicator-vs-indicator comparisons (both non-price), use standard close-based values
+ */
+function checkRuleWithHighLow(
+  data: OHLCV[],
+  index: number,
+  rule: StrategyRule
+): ParsedCondition {
+  const indicator = rule.indicator.toLowerCase();
+  const condition = rule.condition;
+  
+  // Determine if this is a price-based indicator
+  const isPriceIndicator = ['price', 'close', 'high', 'low', 'open'].includes(indicator);
+  
+  if (isPriceIndicator) {
+    const rightValue = parseRuleValue(rule.value, data, index);
+    
+    // Use high for upward breakouts, low for downward breakouts
+    if (condition === 'crosses_above' || condition === 'greater_than' || condition === 'above') {
+      const leftValue = data[index].high;
+      return { leftValue, rightValue, condition, isMet: leftValue > rightValue };
+    }
+    if (condition === 'crosses_below' || condition === 'less_than' || condition === 'below') {
+      const leftValue = data[index].low;
+      return { leftValue, rightValue, condition, isMet: leftValue < rightValue };
+    }
+  }
+  
+  // Default: standard indicator-based evaluation
+  return checkRule(data, index, rule);
+}
+
+// Check if exit conditions are met — uses high/low for SL/TP evaluation
+// Order: 1. StopLoss (check low), 2. TakeProfit (check high), 3. MaxHolding, 4. Custom rules
 export function checkExitSignal(
   data: OHLCV[],
   index: number,
@@ -251,51 +260,54 @@ export function checkExitSignal(
     takeProfitPercent?: number;
     maxHoldingDays?: number;
   } = {}
-): { shouldExit: boolean; reason: string } {
-  const currentPrice = data[index].close;
-  const pnlPercent = ((currentPrice - entryPrice) / entryPrice) * 100;
-  
-  // Check stop loss
+): { shouldExit: boolean; reason: string; exitPrice?: number } {
+  const candle = data[index];
+
+  // ── 1. Check stop loss using candle LOW ──
   const stopLoss = config.stopLossPercent ?? 3;
-  if (pnlPercent <= -stopLoss) {
-    return { shouldExit: true, reason: 'stop_loss' };
+  const stopLossPrice = entryPrice * (1 - stopLoss / 100);
+  if (candle.low <= stopLossPrice) {
+    return { shouldExit: true, reason: 'stop_loss', exitPrice: stopLossPrice };
   }
-  
-  // Check take profit
+
+  // ── 2. Check take profit using candle HIGH ──
   const takeProfit = config.takeProfitPercent ?? 5;
-  if (pnlPercent >= takeProfit) {
-    return { shouldExit: true, reason: 'take_profit' };
+  const takeProfitPrice = entryPrice * (1 + takeProfit / 100);
+  if (candle.high >= takeProfitPrice) {
+    return { shouldExit: true, reason: 'take_profit', exitPrice: takeProfitPrice };
   }
-  
-  // Check max holding period
+
+  // ── 3. Check max holding period ──
   const maxHolding = config.maxHoldingDays ?? 20;
   if (holdingDays >= maxHolding) {
-    return { shouldExit: true, reason: 'max_holding' };
+    return { shouldExit: true, reason: 'max_holding', exitPrice: candle.close };
   }
-  
-  // Check custom exit rules
+
+  // ── 4. Check custom exit rules ──
   for (const rule of rules) {
-    // Handle special exit indicators
     if (rule.indicator === 'PROFIT') {
-      if (pnlPercent >= parseFloat(String(rule.value))) {
-        return { shouldExit: true, reason: 'profit_target' };
+      const profitPct = ((candle.high - entryPrice) / entryPrice) * 100;
+      if (profitPct >= parseFloat(String(rule.value))) {
+        return { shouldExit: true, reason: 'profit_target', exitPrice: entryPrice * (1 + parseFloat(String(rule.value)) / 100) };
       }
       continue;
     }
     
     if (rule.indicator === 'LOSS') {
-      if (pnlPercent <= -parseFloat(String(rule.value))) {
-        return { shouldExit: true, reason: 'loss_limit' };
+      const lossPct = ((entryPrice - candle.low) / entryPrice) * 100;
+      if (lossPct >= parseFloat(String(rule.value))) {
+        return { shouldExit: true, reason: 'loss_limit', exitPrice: entryPrice * (1 - parseFloat(String(rule.value)) / 100) };
       }
       continue;
     }
-    
-    const { isMet } = checkRule(data, index, rule);
+
+    // Use high/low aware check for custom exit rules too
+    const { isMet } = checkRuleWithHighLow(data, index, rule);
     if (isMet) {
-      return { shouldExit: true, reason: 'rule_triggered' };
+      return { shouldExit: true, reason: 'rule_triggered', exitPrice: candle.close };
     }
   }
-  
+
   return { shouldExit: false, reason: '' };
 }
 
@@ -311,8 +323,6 @@ export function validateRulesForPlan(
     if (!allowedIndicators.includes(indicator)) {
       blockedIndicators.push(rule.indicator);
     }
-    
-    // Also check value if it's an indicator reference
     if (typeof rule.value === 'string' && isNaN(parseFloat(rule.value))) {
       const valueIndicator = rule.value.toLowerCase();
       if (!allowedIndicators.includes(valueIndicator)) {
@@ -323,6 +333,6 @@ export function validateRulesForPlan(
   
   return {
     isValid: blockedIndicators.length === 0,
-    blockedIndicators: [...new Set(blockedIndicators)], // Remove duplicates
+    blockedIndicators: [...new Set(blockedIndicators)],
   };
 }
