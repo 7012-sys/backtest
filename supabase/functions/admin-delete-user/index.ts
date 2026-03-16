@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
 
     // Prevent admin from deleting themselves
     if (userId === caller.id) {
-      return new Response(JSON.stringify({ error: "Cannot modify your own account" }), {
+      return new Response(JSON.stringify({ success: false, error: "Cannot modify your own account" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
