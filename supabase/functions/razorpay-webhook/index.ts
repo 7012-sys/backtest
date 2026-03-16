@@ -40,7 +40,10 @@ serve(async (req) => {
 
       if (expectedSignature !== signature) {
         console.error("Invalid webhook signature");
-        throw new Error("Invalid signature");
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid signature" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 
@@ -54,9 +57,10 @@ serve(async (req) => {
 
     if (!subscriptionEntity) {
       console.log("No subscription entity in payload");
-      return new Response(JSON.stringify({ received: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ success: true, data: { received: true } }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const razorpaySubId = subscriptionEntity.id;
@@ -119,17 +123,15 @@ serve(async (req) => {
         console.log("Unhandled event:", event.event);
     }
 
-    return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (error: any) {
-    console.error("Webhook error:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      }
+      JSON.stringify({ success: true, data: { received: true, event: event.event } }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error: any) {
+    console.error("Webhook error:", error?.message);
+    return new Response(
+      JSON.stringify({ success: false, error: error?.message || "Webhook processing failed" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
