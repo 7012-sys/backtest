@@ -1,12 +1,11 @@
 // Main Backtest Engine
-// Orchestrates the backtesting process
+// Orchestrates the backtesting process with accurate high/low candle logic
 
 import { 
   OHLCV, 
   StrategyRule, 
   BacktestResults, 
   BacktestConfig,
-  EquityPoint,
 } from './types';
 import { checkEntrySignal, checkExitSignal } from './strategyParser';
 import { 
@@ -49,15 +48,9 @@ export function runBacktest(
 ): BacktestResults {
   const fullConfig = { ...DEFAULT_CONFIG, ...config, initialCapital };
   
-  // Clamp end date to dataset max date to avoid processing empty/future data
-  const datasetMaxDate = priceData.length > 0 ? priceData[priceData.length - 1].date : '';
-  const datasetMinDate = priceData.length > 0 ? priceData[0].date : '';
-  // Filter priceData to only include data within the dataset bounds
-  // (already handled by caller, but defensive)
-  
   let state = initializeSimulation(initialCapital);
   
-  // Process each candle
+  // Process each candle sequentially
   for (let i = 0; i < priceData.length; i++) {
     const candle = priceData[i];
     
@@ -70,9 +63,9 @@ export function runBacktest(
         state = openPosition(state, candle, i, fullConfig);
       }
     } else {
-      // Look for exit signal
+      // Check exit: evaluate SL (via low) → TP (via high) → custom rules
       const holdingDays = i - state.position.entryIndex;
-      const { shouldExit } = checkExitSignal(
+      const exitResult = checkExitSignal(
         priceData, 
         i, 
         exitRules, 
@@ -85,8 +78,9 @@ export function runBacktest(
         }
       );
       
-      if (shouldExit) {
-        state = closePosition(state, candle, priceData, fullConfig);
+      if (exitResult.shouldExit) {
+        // Pass the specific exit price from SL/TP calculation
+        state = closePosition(state, candle, priceData, fullConfig, exitResult.exitPrice);
       }
     }
   }
@@ -102,10 +96,7 @@ export function runBacktest(
     state.maxDrawdown
   );
   
-  // Calculate monthly returns
   const monthlyReturns = calculateMonthlyReturns(state.equityCurve);
-
-  // Calculate confidence score
   const paramCount = entryRules.length + exitRules.length;
   const confidence = calculateConfidenceScore(state.trades, state.equityCurve, paramCount, initialCapital);
   
@@ -142,7 +133,7 @@ function hashSeed(str: string): number {
   return Math.abs(hash);
 }
 
-// Generate realistic price data for a symbol within date range
+// Generate realistic price data for a symbol within date range (fallback only)
 export function generatePriceData(
   symbol: string,
   startDate: string,
@@ -152,13 +143,10 @@ export function generatePriceData(
   const start = new Date(startDate);
   const end = new Date(endDate);
   const data: OHLCV[] = [];
-
-  // Use seeded PRNG so same inputs always produce same output
   const rand = seededRandom(hashSeed(symbol + startDate + endDate + timeframe));
 
   let basePrice = getBasePrice(symbol);
   const volatility = getVolatility(symbol);
-
   const intervalMs = getIntervalMs(timeframe);
   const tradingHoursOnly = ['1m', '5m', '15m', '1h'].includes(timeframe);
 
@@ -192,7 +180,7 @@ export function generatePriceData(
       currentDate = new Date(currentDate.getTime() + intervalMs);
     }
 
-    if (data.length >= 10000) break; // Allow up to 10000 candles for multi-year ranges
+    if (data.length >= 10000) break;
   }
 
   return data;
@@ -200,29 +188,12 @@ export function generatePriceData(
 
 function getBasePrice(symbol: string): number {
   const prices: Record<string, number> = {
-    'NIFTY50': 22500,
-    'BANKNIFTY': 48000,
-    'NIFTYIT': 34000,
-    'NIFTYMIDCAP': 12000,
-    'RELIANCE': 2900,
-    'TCS': 4200,
-    'INFY': 1800,
-    'ICICIBANK': 1100,
-    'HINDUNILVR': 2400,
-    'SBIN': 780,
-    'BHARTIARTL': 1450,
-    'ITC': 450,
-    'KOTAKBANK': 1750,
-    'LT': 3500,
-    'AXISBANK': 1200,
-    'ASIANPAINT': 2800,
-    'MARUTI': 12500,
-    'TITAN': 3600,
-    'BAJFINANCE': 7200,
-    'WIPRO': 520,
-    'ULTRACEMCO': 11000,
-    'NESTLEIND': 2500,
-    'SUNPHARMA': 1800,
+    'NIFTY50': 22500, 'BANKNIFTY': 48000, 'NIFTYIT': 34000, 'NIFTYMIDCAP': 12000,
+    'RELIANCE': 2900, 'TCS': 4200, 'INFY': 1800, 'ICICIBANK': 1100,
+    'HINDUNILVR': 2400, 'SBIN': 780, 'BHARTIARTL': 1450, 'ITC': 450,
+    'KOTAKBANK': 1750, 'LT': 3500, 'AXISBANK': 1200, 'ASIANPAINT': 2800,
+    'MARUTI': 12500, 'TITAN': 3600, 'BAJFINANCE': 7200, 'WIPRO': 520,
+    'ULTRACEMCO': 11000, 'NESTLEIND': 2500, 'SUNPHARMA': 1800,
   };
   return prices[symbol] || 1000;
 }
@@ -235,12 +206,8 @@ function getVolatility(symbol: string): number {
 
 function getIntervalMs(timeframe: string): number {
   const intervals: Record<string, number> = {
-    '1m': 60 * 1000,
-    '5m': 5 * 60 * 1000,
-    '15m': 15 * 60 * 1000,
-    '1h': 60 * 60 * 1000,
-    '1d': 24 * 60 * 60 * 1000,
-    '1w': 7 * 24 * 60 * 60 * 1000,
+    '1m': 60 * 1000, '5m': 5 * 60 * 1000, '15m': 15 * 60 * 1000,
+    '1h': 60 * 60 * 1000, '1d': 24 * 60 * 60 * 1000, '1w': 7 * 24 * 60 * 60 * 1000,
   };
   return intervals[timeframe] || 24 * 60 * 60 * 1000;
 }
@@ -248,7 +215,6 @@ function getIntervalMs(timeframe: string): number {
 function generateCandle(basePrice: number, volatility: number, date: string, rand: () => number): OHLCV {
   const trend = rand() > 0.48 ? 1 : -1;
   const range = basePrice * volatility;
-
   const open = basePrice + (rand() - 0.5) * range * 0.3;
   const close = open + trend * rand() * range;
   const high = Math.max(open, close) + rand() * range * 0.5;
@@ -264,4 +230,3 @@ function generateCandle(basePrice: number, volatility: number, date: string, ran
     volume,
   };
 }
-
