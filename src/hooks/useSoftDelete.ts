@@ -9,7 +9,7 @@ interface SoftDeleteOptions {
 
 export const useSoftDelete = (options: SoftDeleteOptions = {}) => {
   const { onDeleted, undoTimeoutMs = 5000 } = options;
-  const pendingDeletes = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const pendingDeletes = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const softDeleteStrategy = useCallback(async (strategyId: string, strategyName: string) => {
     // Immediately hide from UI by marking as deleted in local state
