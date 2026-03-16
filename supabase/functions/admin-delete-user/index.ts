@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!roleCheck) {
-      return new Response(JSON.stringify({ error: "Admin access required" }), {
+      return new Response(JSON.stringify({ success: false, error: "Admin access required" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
