@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     // action: "disable" | "enable" | "delete"
 
     if (!userId || !action) {
-      return new Response(JSON.stringify({ error: "userId and action required" }), {
+      return new Response(JSON.stringify({ success: false, error: "userId and action required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
