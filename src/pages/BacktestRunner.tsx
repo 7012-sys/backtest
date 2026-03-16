@@ -273,6 +273,9 @@ const BacktestRunner = () => {
     setUsedFallbackData(false);
   }, [symbol, dataSourceMode, timeframe, startDate, endDate, initialCapital, commissionPercent, slippagePercent, selectedStrategy, stopLossPercent, takeProfitPercent, riskRewardRatio, positionSizing, enableShorts]);
 
+  // Intraday date range limits
+  const INTRADAY_LIMITS: Record<string, number> = { '1m': 7, '5m': 60, '15m': 60 };
+
   const runBacktestHandler = async () => {
     if (!user || !selectedStrategy) { toast.error("Please select a strategy"); return; }
     if (!canRunBacktest) { setLimitModalType("backtest"); setShowLimitModal(true); return; }
@@ -280,6 +283,17 @@ const BacktestRunner = () => {
     if (!startDate || !endDate) { toast.error("Please select date range"); return; }
     const s = new Date(startDate), e = new Date(endDate);
     if (s >= e) { toast.error("Start date must be before end date"); return; }
+
+    // Enforce intraday date range limits
+    const maxDays = INTRADAY_LIMITS[timeframe];
+    if (maxDays && dataSourceMode === "market") {
+      const rangeDays = Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
+      if (rangeDays > maxDays) {
+        toast.error(`${timeframe} timeframe is limited to ${maxDays} days of data. You selected ${rangeDays} days. Please reduce your date range.`);
+        return;
+      }
+    }
+
     if (!usagePro && dataSourceMode === "market") {
       const freeMin = new Date(getFreeStartDate());
       if (s < freeMin) { toast.error("Free plan allows max 3 years of data. Upgrade for full history."); return; }
@@ -306,12 +320,12 @@ const BacktestRunner = () => {
           low: typeof row.low === 'number' ? row.low : parseFloat(row.low || row.Low || 0),
           close: typeof row.close === 'number' ? row.close : parseFloat(row.close || row.Close || 0),
           volume: typeof row.volume === 'number' ? row.volume : parseFloat(row.volume || row.Volume || 0),
-        })).filter((d: OHLCV) => !isNaN(d.close) && d.close > 0);
+        })).filter((d: OHLCV) => !isNaN(d.close) && d.close > 0 && !isNaN(d.open) && !isNaN(d.high) && !isNaN(d.low));
         if (startDate && endDate) {
           priceData = priceData.filter(d => d.date >= startDate && d.date <= endDate);
         }
       } else {
-        // Fetch real market data from Yahoo Finance via edge function
+        // Fetch market data (cache-first via edge function)
         try {
           const { data: fetchResult, error: fetchError } = await supabase.functions.invoke('fetch-market-data', {
             body: { symbol, startDate, endDate, timeframe },
@@ -321,7 +335,8 @@ const BacktestRunner = () => {
           }
           priceData = fetchResult.data as OHLCV[];
           setUsedFallbackData(false);
-          toast.info(`Loaded ${priceData.length} real candles from Yahoo Finance`, { duration: 3000 });
+          const source = fetchResult.meta?.source === 'cache' ? 'cache' : 'Yahoo Finance';
+          toast.info(`Loaded ${priceData.length} candles from ${source}`, { duration: 3000 });
         } catch (fetchErr: any) {
           console.warn('Real data fetch failed, using simulated data:', fetchErr.message);
           priceData = generatePriceData(symbol, startDate, endDate, timeframe);
