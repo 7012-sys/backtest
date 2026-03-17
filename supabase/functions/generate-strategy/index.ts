@@ -234,10 +234,10 @@ serve(async (req) => {
       });
     }
 
-    // ── Step 3: Call OpenAI ──
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-    if (!OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY is not configured");
+    // ── Step 3: Call Lovable AI (free, no API key cost) ──
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     const systemPrompt = `You are an expert trading strategy generator. Given a user's trading idea in plain English, generate structured trading rules.
@@ -245,34 +245,69 @@ serve(async (req) => {
 Available indicators: ${INDICATORS.join(", ")}
 Available conditions: ${CONDITIONS.join(", ")}
 
-You must respond with a JSON object containing:
-- name: A short, descriptive strategy name (max 50 chars)
-- description: A brief description of the strategy (max 200 chars)
-- entryRules: Array of entry rule objects
-- exitRules: Array of exit rule objects
+Generate a strategy with a name, description, entry rules, and exit rules. Each rule must use only the available indicators and conditions. Keep strategies practical and based on sound technical analysis principles.`;
 
-Each rule object must have:
-- id: A unique string ID (use uuid-like format)
-- indicator: One of the available indicators
-- condition: One of the available conditions
-- value: A number or indicator name for comparison
-- connector: "AND" or "OR" (for connecting to next rule)
-
-Always include at least one entry rule and one exit rule. Keep strategies practical and based on sound technical analysis principles.`;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt.trim() },
         ],
-        temperature: 0.7,
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "create_strategy",
+              description: "Create a structured trading strategy with entry and exit rules",
+              parameters: {
+                type: "object",
+                properties: {
+                  name: { type: "string", description: "Short strategy name (max 50 chars)" },
+                  description: { type: "string", description: "Brief description (max 200 chars)" },
+                  entryRules: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        indicator: { type: "string", enum: INDICATORS },
+                        condition: { type: "string", enum: CONDITIONS },
+                        value: { type: "string" },
+                        connector: { type: "string", enum: ["AND", "OR"] },
+                      },
+                      required: ["id", "indicator", "condition", "value", "connector"],
+                      additionalProperties: false,
+                    },
+                  },
+                  exitRules: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        indicator: { type: "string", enum: INDICATORS },
+                        condition: { type: "string", enum: CONDITIONS },
+                        value: { type: "string" },
+                        connector: { type: "string", enum: ["AND", "OR"] },
+                      },
+                      required: ["id", "indicator", "condition", "value", "connector"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["name", "description", "entryRules", "exitRules"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "create_strategy" } },
       }),
     });
 
@@ -283,6 +318,11 @@ Always include at least one entry rule and one exit rule. Keep strategies practi
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ success: false, error: "AI service payment required. Please add credits." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       console.error("AI gateway error:", response.status, errorText);
       return new Response(JSON.stringify({ success: false, error: "AI service error" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -290,20 +330,29 @@ Always include at least one entry rule and one exit rule. Keep strategies practi
     }
 
     const aiData = await response.json();
-    const content = aiData.choices?.[0]?.message?.content;
-
-    if (!content) {
-      throw new Error("No response from AI");
-    }
-
+    
     let strategy;
-    try {
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      const jsonStr = jsonMatch ? jsonMatch[1].trim() : content.trim();
-      strategy = JSON.parse(jsonStr);
-    } catch (_parseError) {
-      console.error("Failed to parse AI response:", content);
-      throw new Error("Failed to parse AI response");
+    // Extract from tool call response
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    if (toolCall?.function?.arguments) {
+      try {
+        strategy = JSON.parse(toolCall.function.arguments);
+      } catch (_parseError) {
+        console.error("Failed to parse tool call response:", toolCall.function.arguments);
+        throw new Error("Failed to parse AI response");
+      }
+    } else {
+      // Fallback: try parsing content directly
+      const content = aiData.choices?.[0]?.message?.content;
+      if (!content) throw new Error("No response from AI");
+      try {
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+        const jsonStr = jsonMatch ? jsonMatch[1].trim() : content.trim();
+        strategy = JSON.parse(jsonStr);
+      } catch (_parseError) {
+        console.error("Failed to parse AI response:", content);
+        throw new Error("Failed to parse AI response");
+      }
     }
 
     // ── Step 4: Cache the result ──
