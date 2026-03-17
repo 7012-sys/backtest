@@ -54,9 +54,33 @@ interface Strategy {
 const ALL_DATASETS = [
   { value: "NIFTY50", label: "NIFTY 50", availableFrom: "2010-01-01", isFree: true },
   { value: "BANKNIFTY", label: "BANK NIFTY", availableFrom: "2010-01-01", isFree: false },
+  { value: "NIFTYIT", label: "NIFTY IT", availableFrom: "2010-01-01", isFree: false },
+  { value: "NIFTYMIDCAP", label: "NIFTY MIDCAP 100", availableFrom: "2010-01-01", isFree: false },
   { value: "RELIANCE", label: "RELIANCE", availableFrom: "2010-01-01", isFree: false },
   { value: "TCS", label: "TCS", availableFrom: "2010-01-01", isFree: false },
+  { value: "INFY", label: "INFOSYS", availableFrom: "2010-01-01", isFree: false },
+  { value: "HDFCBANK", label: "HDFC BANK", availableFrom: "2010-01-01", isFree: false },
+  { value: "ICICIBANK", label: "ICICI BANK", availableFrom: "2010-01-01", isFree: false },
+  { value: "SBIN", label: "SBI", availableFrom: "2010-01-01", isFree: false },
   { value: "ITC", label: "ITC", availableFrom: "2010-01-01", isFree: false },
+  { value: "BHARTIARTL", label: "BHARTI AIRTEL", availableFrom: "2010-01-01", isFree: false },
+  { value: "HINDUNILVR", label: "HINDUSTAN UNILEVER", availableFrom: "2010-01-01", isFree: false },
+  { value: "KOTAKBANK", label: "KOTAK BANK", availableFrom: "2010-01-01", isFree: false },
+  { value: "LT", label: "L&T", availableFrom: "2010-01-01", isFree: false },
+  { value: "TATAMOTORS", label: "TATA MOTORS", availableFrom: "2010-01-01", isFree: false },
+  { value: "TATASTEEL", label: "TATA STEEL", availableFrom: "2010-01-01", isFree: false },
+  { value: "AXISBANK", label: "AXIS BANK", availableFrom: "2010-01-01", isFree: false },
+  { value: "BAJFINANCE", label: "BAJAJ FINANCE", availableFrom: "2010-01-01", isFree: false },
+  { value: "MARUTI", label: "MARUTI SUZUKI", availableFrom: "2010-01-01", isFree: false },
+  { value: "TITAN", label: "TITAN", availableFrom: "2010-01-01", isFree: false },
+  { value: "SUNPHARMA", label: "SUN PHARMA", availableFrom: "2010-01-01", isFree: false },
+  { value: "WIPRO", label: "WIPRO", availableFrom: "2010-01-01", isFree: false },
+  { value: "HCLTECH", label: "HCL TECH", availableFrom: "2010-01-01", isFree: false },
+  { value: "ADANIENT", label: "ADANI ENTERPRISES", availableFrom: "2010-01-01", isFree: false },
+  { value: "NTPC", label: "NTPC", availableFrom: "2010-01-01", isFree: false },
+  { value: "ONGC", label: "ONGC", availableFrom: "2010-01-01", isFree: false },
+  { value: "POWERGRID", label: "POWER GRID", availableFrom: "2010-01-01", isFree: false },
+  { value: "ASIANPAINT", label: "ASIAN PAINTS", availableFrom: "2010-01-01", isFree: false },
 ];
 
 const getFreeStartDate = () => {
@@ -69,8 +93,11 @@ const TODAY = new Date().toISOString().split("T")[0];
 
 const TIMEFRAMES = [
   { value: "1m", label: "1 Minute" },
+  { value: "3m", label: "3 Minutes" },
   { value: "5m", label: "5 Minutes" },
+  { value: "10m", label: "10 Minutes" },
   { value: "15m", label: "15 Minutes" },
+  { value: "30m", label: "30 Minutes" },
   { value: "1h", label: "1 Hour" },
   { value: "1d", label: "Daily" },
   { value: "1w", label: "Weekly" },
@@ -273,8 +300,8 @@ const BacktestRunner = () => {
     setUsedFallbackData(false);
   }, [symbol, dataSourceMode, timeframe, startDate, endDate, initialCapital, commissionPercent, slippagePercent, selectedStrategy, stopLossPercent, takeProfitPercent, riskRewardRatio, positionSizing, enableShorts]);
 
-  // Intraday date range limits
-  const INTRADAY_LIMITS: Record<string, number> = { '1m': 7, '5m': 60, '15m': 60 };
+  // NSE India Charts API supports longer intraday ranges than Yahoo
+  // 1m data available for ~1 year, 5m/15m for several years
 
   const runBacktestHandler = async () => {
     if (!user || !selectedStrategy) { toast.error("Please select a strategy"); return; }
@@ -283,16 +310,6 @@ const BacktestRunner = () => {
     if (!startDate || !endDate) { toast.error("Please select date range"); return; }
     const s = new Date(startDate), e = new Date(endDate);
     if (s >= e) { toast.error("Start date must be before end date"); return; }
-
-    // Enforce intraday date range limits
-    const maxDays = INTRADAY_LIMITS[timeframe];
-    if (maxDays && dataSourceMode === "market") {
-      const rangeDays = Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
-      if (rangeDays > maxDays) {
-        toast.error(`${timeframe} timeframe is limited to ${maxDays} days of data. You selected ${rangeDays} days. Please reduce your date range.`);
-        return;
-      }
-    }
 
     if (!usagePro && dataSourceMode === "market") {
       const freeMin = new Date(getFreeStartDate());
