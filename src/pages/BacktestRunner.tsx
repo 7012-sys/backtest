@@ -276,7 +276,14 @@ const BacktestRunner = () => {
   // NSE India Charts API supports longer intraday ranges than Yahoo
   // 1m data available for ~1 year, 5m/15m for several years
 
-    if (!usagePro && dataSourceMode === "market") {
+  const runBacktestHandler = async () => {
+    if (!user || !selectedStrategy) { toast.error("Please select a strategy"); return; }
+    if (!canRunBacktest) { setLimitModalType("backtest"); setShowLimitModal(true); return; }
+    if (!isTimeframeAllowed(timeframe)) { setLimitModalType("timeframe"); setShowLimitModal(true); return; }
+    if (!startDate || !endDate) { toast.error("Please select date range"); return; }
+    const s = new Date(startDate), e = new Date(endDate);
+    if (s >= e) { toast.error("Start date must be before end date"); return; }
+
       const freeMin = new Date(getFreeStartDate());
       if (s < freeMin) { toast.error("Free plan allows max 3 years of data. Upgrade for full history."); return; }
     }
