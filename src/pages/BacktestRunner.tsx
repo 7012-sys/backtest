@@ -311,6 +311,7 @@ const BacktestRunner = () => {
     const s = new Date(startDate), e = new Date(endDate);
     if (s >= e) { toast.error("Start date must be before end date"); return; }
 
+    if (!usagePro && dataSourceMode === "market") {
       const freeMin = new Date(getFreeStartDate());
       if (s < freeMin) { toast.error("Free plan allows max 3 years of data. Upgrade for full history."); return; }
     }
