@@ -569,7 +569,7 @@ const BacktestRunner = () => {
                     </div>
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1"><Calendar className="h-3 w-3" /> End Date</Label>
-                      <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} max={TODAY} />
+                      <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} max={YESTERDAY} />
                     </div>
                   </div>
                 </>
