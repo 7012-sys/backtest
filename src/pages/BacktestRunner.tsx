@@ -66,7 +66,13 @@ const getFreeStartDate = () => {
   return d.toISOString().split("T")[0];
 };
 
-const TODAY = new Date().toISOString().split("T")[0];
+// Max end date is yesterday since today's data isn't complete
+const getYesterday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
+};
+const YESTERDAY = getYesterday();
 
 const TIMEFRAMES = [
   { value: "1m", label: "1 Minute" },
@@ -161,7 +167,7 @@ const BacktestRunner = () => {
       if (!session?.user) navigate("/auth");
     });
     const today = new Date();
-    setEndDate(today.toISOString().split("T")[0]);
+    setEndDate(YESTERDAY);
     // Default start date will be set once usagePro is known
     const threeYearsAgo = new Date(today);
     threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
@@ -473,7 +479,7 @@ const BacktestRunner = () => {
                     setCsvDateMin(""); setCsvDateMax(""); setSelectedLibraryFile("");
                     const ds = ALL_DATASETS.find(d => d.value === symbol);
                     const minDate = !usagePro ? getFreeStartDate() : (ds?.availableFrom || "2010-01-01");
-                    if (ds) { setStartDate(minDate); setEndDate(TODAY); }
+                    if (ds) { setStartDate(minDate); setEndDate(YESTERDAY); }
                   }}
                   className="w-full"
                 >
@@ -507,7 +513,7 @@ const BacktestRunner = () => {
                       }
                       setSymbol(val);
                       const minDate = !usagePro ? getFreeStartDate() : (ds?.availableFrom || "2010-01-01");
-                      if (ds) { setStartDate(minDate); setEndDate(TODAY); }
+                      if (ds) { setStartDate(minDate); setEndDate(YESTERDAY); }
                     }}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -563,7 +569,7 @@ const BacktestRunner = () => {
                     </div>
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1"><Calendar className="h-3 w-3" /> End Date</Label>
-                      <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} max={TODAY} />
+                      <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} max={YESTERDAY} />
                     </div>
                   </div>
                 </>
