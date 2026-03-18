@@ -513,7 +513,7 @@ const BacktestRunner = () => {
                       }
                       setSymbol(val);
                       const minDate = !usagePro ? getFreeStartDate() : (ds?.availableFrom || "2010-01-01");
-                      if (ds) { setStartDate(minDate); setEndDate(TODAY); }
+                      if (ds) { setStartDate(minDate); setEndDate(YESTERDAY); }
                     }}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
