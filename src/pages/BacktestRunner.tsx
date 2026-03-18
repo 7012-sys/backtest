@@ -167,7 +167,7 @@ const BacktestRunner = () => {
       if (!session?.user) navigate("/auth");
     });
     const today = new Date();
-    setEndDate(today.toISOString().split("T")[0]);
+    setEndDate(YESTERDAY);
     // Default start date will be set once usagePro is known
     const threeYearsAgo = new Date(today);
     threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
