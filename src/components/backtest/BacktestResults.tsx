@@ -189,9 +189,20 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={{ stroke: "hsl(var(--border))" }}
-                  tickFormatter={(v) => { const d = new Date(v); return String(d.getFullYear()); }}
+                  tickFormatter={(v) => {
+                    const d = new Date(v);
+                    if (isNaN(d.getTime())) return v;
+                    const curve = results.equityCurve;
+                    const first = new Date(curve[0]?.date);
+                    const last = new Date(curve[curve.length - 1]?.date);
+                    const spanYears = (last.getTime() - first.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+                    if (spanYears <= 2) {
+                      return d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+                    }
+                    return String(d.getFullYear());
+                  }}
                   interval="preserveStartEnd"
-                  minTickGap={40}
+                  minTickGap={50}
                 />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} tickLine={false} axisLine={{ stroke: "hsl(var(--border))" }} domain={['auto', 'auto']} width={55} />
                 <ReferenceLine y={initialCapital} stroke="hsl(var(--muted-foreground))" strokeDasharray="5 5" label={{ value: 'Start', position: 'insideTopRight', fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
