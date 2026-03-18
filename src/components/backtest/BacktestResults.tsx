@@ -273,7 +273,6 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
                   <Bar dataKey="return" radius={[4, 4, 0, 0]}>
                     {Array.from({ length: 12 }).map((_, idx) => (
                       <Cell key={idx} fill={(() => {
-                        const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                         const buckets: Record<number, number[]> = {};
                         for (let m = 0; m < 12; m++) buckets[m] = [];
                         results.monthlyReturns.forEach(mr => {
@@ -281,7 +280,8 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
                           if (!isNaN(d.getTime())) buckets[d.getMonth()].push(mr.return);
                         });
                         const vals = buckets[idx];
-                        const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+                        if (vals.length === 0) return 'hsl(var(--muted))';
+                        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
                         return avg >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
                       })()} />
                     ))}

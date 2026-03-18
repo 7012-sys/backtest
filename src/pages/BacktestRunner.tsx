@@ -66,7 +66,13 @@ const getFreeStartDate = () => {
   return d.toISOString().split("T")[0];
 };
 
-const TODAY = new Date().toISOString().split("T")[0];
+// Max end date is yesterday since today's data isn't complete
+const getYesterday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
+};
+const YESTERDAY = getYesterday();
 
 const TIMEFRAMES = [
   { value: "1m", label: "1 Minute" },
