@@ -53,11 +53,10 @@ interface Strategy {
 // Free users: only NIFTY50, past 3 years. Pro users: all datasets, full history.
 const ALL_DATASETS = [
   { value: "NIFTY50", label: "NIFTY 50", availableFrom: "2010-01-01", isFree: true },
-  { value: "BANKNIFTY", label: "NIFTY Bank", availableFrom: "2010-01-01", isFree: false },
+  { value: "BANKNIFTY", label: "BANK NIFTY", availableFrom: "2010-01-01", isFree: false },
   { value: "RELIANCE", label: "RELIANCE", availableFrom: "2010-01-01", isFree: false },
   { value: "TCS", label: "TCS", availableFrom: "2010-01-01", isFree: false },
-  { value: "HDFCBANK", label: "HDFC BANK", availableFrom: "2010-01-01", isFree: false },
-  { value: "INFY", label: "INFOSYS", availableFrom: "2010-01-01", isFree: false },
+  { value: "ITC", label: "ITC", availableFrom: "2010-01-01", isFree: false },
 ];
 
 const getFreeStartDate = () => {
@@ -66,19 +65,12 @@ const getFreeStartDate = () => {
   return d.toISOString().split("T")[0];
 };
 
-// Max end date is yesterday since today's data isn't complete
-const getYesterday = () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().split("T")[0];
-};
-const YESTERDAY = getYesterday();
+const TODAY = new Date().toISOString().split("T")[0];
 
 const TIMEFRAMES = [
   { value: "1m", label: "1 Minute" },
   { value: "5m", label: "5 Minutes" },
   { value: "15m", label: "15 Minutes" },
-  { value: "30m", label: "30 Minutes" },
   { value: "1h", label: "1 Hour" },
   { value: "1d", label: "Daily" },
   { value: "1w", label: "Weekly" },
@@ -167,7 +159,7 @@ const BacktestRunner = () => {
       if (!session?.user) navigate("/auth");
     });
     const today = new Date();
-    setEndDate(YESTERDAY);
+    setEndDate(today.toISOString().split("T")[0]);
     // Default start date will be set once usagePro is known
     const threeYearsAgo = new Date(today);
     threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
@@ -281,8 +273,8 @@ const BacktestRunner = () => {
     setUsedFallbackData(false);
   }, [symbol, dataSourceMode, timeframe, startDate, endDate, initialCapital, commissionPercent, slippagePercent, selectedStrategy, stopLossPercent, takeProfitPercent, riskRewardRatio, positionSizing, enableShorts]);
 
-  // NSE India Charts API supports longer intraday ranges than Yahoo
-  // 1m data available for ~1 year, 5m/15m for several years
+  // Intraday date range limits
+  const INTRADAY_LIMITS: Record<string, number> = { '1m': 7, '5m': 60, '15m': 60 };
 
   const runBacktestHandler = async () => {
     if (!user || !selectedStrategy) { toast.error("Please select a strategy"); return; }
@@ -291,6 +283,16 @@ const BacktestRunner = () => {
     if (!startDate || !endDate) { toast.error("Please select date range"); return; }
     const s = new Date(startDate), e = new Date(endDate);
     if (s >= e) { toast.error("Start date must be before end date"); return; }
+
+    // Enforce intraday date range limits
+    const maxDays = INTRADAY_LIMITS[timeframe];
+    if (maxDays && dataSourceMode === "market") {
+      const rangeDays = Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
+      if (rangeDays > maxDays) {
+        toast.error(`${timeframe} timeframe is limited to ${maxDays} days of data. You selected ${rangeDays} days. Please reduce your date range.`);
+        return;
+      }
+    }
 
     if (!usagePro && dataSourceMode === "market") {
       const freeMin = new Date(getFreeStartDate());
@@ -479,7 +481,7 @@ const BacktestRunner = () => {
                     setCsvDateMin(""); setCsvDateMax(""); setSelectedLibraryFile("");
                     const ds = ALL_DATASETS.find(d => d.value === symbol);
                     const minDate = !usagePro ? getFreeStartDate() : (ds?.availableFrom || "2010-01-01");
-                    if (ds) { setStartDate(minDate); setEndDate(YESTERDAY); }
+                    if (ds) { setStartDate(minDate); setEndDate(TODAY); }
                   }}
                   className="w-full"
                 >
@@ -513,7 +515,7 @@ const BacktestRunner = () => {
                       }
                       setSymbol(val);
                       const minDate = !usagePro ? getFreeStartDate() : (ds?.availableFrom || "2010-01-01");
-                      if (ds) { setStartDate(minDate); setEndDate(YESTERDAY); }
+                      if (ds) { setStartDate(minDate); setEndDate(TODAY); }
                     }}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -569,7 +571,7 @@ const BacktestRunner = () => {
                     </div>
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1"><Calendar className="h-3 w-3" /> End Date</Label>
-                      <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} max={YESTERDAY} />
+                      <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} max={TODAY} />
                     </div>
                   </div>
                 </>

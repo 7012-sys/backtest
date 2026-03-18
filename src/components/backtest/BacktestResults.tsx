@@ -189,20 +189,9 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={{ stroke: "hsl(var(--border))" }}
-                  tickFormatter={(v) => {
-                    const d = new Date(v);
-                    if (isNaN(d.getTime())) return v;
-                    const curve = results.equityCurve;
-                    const first = new Date(curve[0]?.date);
-                    const last = new Date(curve[curve.length - 1]?.date);
-                    const spanYears = (last.getTime() - first.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-                    if (spanYears <= 2) {
-                      return d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
-                    }
-                    return String(d.getFullYear());
-                  }}
+                  tickFormatter={(v) => { const d = new Date(v); return String(d.getFullYear()); }}
                   interval="preserveStartEnd"
-                  minTickGap={50}
+                  minTickGap={40}
                 />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} tickLine={false} axisLine={{ stroke: "hsl(var(--border))" }} domain={['auto', 'auto']} width={55} />
                 <ReferenceLine y={initialCapital} stroke="hsl(var(--muted-foreground))" strokeDasharray="5 5" label={{ value: 'Start', position: 'insideTopRight', fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
@@ -250,8 +239,8 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
                   });
                   return MONTH_NAMES.map((name, i) => {
                     const vals = buckets[i];
-                    const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-                    return { month: name, return: avg !== null ? parseFloat(avg.toFixed(2)) : 0, hasData: vals.length > 0 };
+                    const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+                    return { month: name, return: parseFloat(avg.toFixed(2)) };
                   });
                 })()}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
@@ -273,6 +262,7 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
                   <Bar dataKey="return" radius={[4, 4, 0, 0]}>
                     {Array.from({ length: 12 }).map((_, idx) => (
                       <Cell key={idx} fill={(() => {
+                        const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                         const buckets: Record<number, number[]> = {};
                         for (let m = 0; m < 12; m++) buckets[m] = [];
                         results.monthlyReturns.forEach(mr => {
@@ -280,8 +270,7 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
                           if (!isNaN(d.getTime())) buckets[d.getMonth()].push(mr.return);
                         });
                         const vals = buckets[idx];
-                        if (vals.length === 0) return 'hsl(var(--muted))';
-                        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                        const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
                         return avg >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
                       })()} />
                     ))}
