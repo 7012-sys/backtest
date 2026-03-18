@@ -250,8 +250,8 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
                   });
                   return MONTH_NAMES.map((name, i) => {
                     const vals = buckets[i];
-                    const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-                    return { month: name, return: parseFloat(avg.toFixed(2)) };
+                    const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+                    return { month: name, return: avg !== null ? parseFloat(avg.toFixed(2)) : 0, hasData: vals.length > 0 };
                   });
                 })()}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
