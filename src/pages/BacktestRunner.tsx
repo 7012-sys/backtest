@@ -479,7 +479,7 @@ const BacktestRunner = () => {
                     setCsvDateMin(""); setCsvDateMax(""); setSelectedLibraryFile("");
                     const ds = ALL_DATASETS.find(d => d.value === symbol);
                     const minDate = !usagePro ? getFreeStartDate() : (ds?.availableFrom || "2010-01-01");
-                    if (ds) { setStartDate(minDate); setEndDate(TODAY); }
+                    if (ds) { setStartDate(minDate); setEndDate(YESTERDAY); }
                   }}
                   className="w-full"
                 >
