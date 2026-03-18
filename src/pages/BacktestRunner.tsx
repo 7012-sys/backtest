@@ -70,9 +70,7 @@ const TODAY = new Date().toISOString().split("T")[0];
 
 const TIMEFRAMES = [
   { value: "1m", label: "1 Minute" },
-  { value: "3m", label: "3 Minutes" },
   { value: "5m", label: "5 Minutes" },
-  { value: "10m", label: "10 Minutes" },
   { value: "15m", label: "15 Minutes" },
   { value: "30m", label: "30 Minutes" },
   { value: "1h", label: "1 Hour" },
