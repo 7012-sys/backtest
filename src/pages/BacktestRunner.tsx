@@ -57,6 +57,12 @@ const ALL_DATASETS = [
   { value: "RELIANCE", label: "RELIANCE", availableFrom: "2010-01-01", isFree: false },
   { value: "TCS", label: "TCS", availableFrom: "2010-01-01", isFree: false },
   { value: "ITC", label: "ITC", availableFrom: "2010-01-01", isFree: false },
+  { value: "HDFCBANK", label: "HDFC BANK", availableFrom: "2010-01-01", isFree: false },
+  { value: "TATAMOTORS", label: "TATA MOTORS", availableFrom: "2010-01-01", isFree: false },
+  { value: "ADANIENT", label: "ADANI ENT", availableFrom: "2013-01-01", isFree: false },
+  { value: "POWERGRID", label: "POWER GRID", availableFrom: "2010-01-01", isFree: false },
+  { value: "INFY", label: "INFOSYS", availableFrom: "2010-01-01", isFree: false },
+  { value: "SBIN", label: "SBI", availableFrom: "2010-01-01", isFree: false },
 ];
 
 const getFreeStartDate = () => {
