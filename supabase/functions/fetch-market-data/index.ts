@@ -49,6 +49,7 @@ const INTRADAY_LIMITS: Record<string, number> = {
   '1m': 7,
   '5m': 60,
   '15m': 60,
+  '1h': 730,
 };
 
 interface CandleRow {
