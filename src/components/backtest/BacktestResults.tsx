@@ -180,39 +180,80 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
         <CardContent>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={results.equityCurve.filter((_, i) => i % Math.max(1, Math.floor(results.equityCurve.length / 300)) === 0)}>
-                <defs>
-                  <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={isProfitable ? "hsl(var(--success))" : "hsl(var(--destructive))"} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={isProfitable ? "hsl(var(--success))" : "hsl(var(--destructive))"} stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={{ stroke: "hsl(var(--border))" }}
-                  tickFormatter={(v) => { const d = new Date(v); return String(d.getFullYear()); }}
-                  interval="preserveStartEnd"
-                  minTickGap={40}
-                />
-                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} tickLine={false} axisLine={{ stroke: "hsl(var(--border))" }} domain={['auto', 'auto']} width={55} />
-                <ReferenceLine y={initialCapital} stroke="hsl(var(--muted-foreground))" strokeDasharray="5 5" label={{ value: 'Start', position: 'insideTopRight', fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
-                <Tooltip content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const value = payload[0].value as number;
-                    const retPct = ((value - initialCapital) / initialCapital) * 100;
-                    return (
-                      <div className="bg-popover border border-border rounded-lg p-2.5 shadow-lg">
-                        <p className="text-xs text-muted-foreground">{payload[0].payload.date}</p>
-                        <p className="font-medium">{formatCurrency(value)}</p>
-                        <p className={`text-xs ${retPct >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          {retPct >= 0 ? '+' : ''}{retPct.toFixed(1)}%
-                        </p>
-                      </div>
-                    );
+              {(() => {
+                const sampled = results.equityCurve.filter((_, i) => i % Math.max(1, Math.floor(results.equityCurve.length / 300)) === 0);
+                
+                // Determine date range span for dynamic X-axis formatting
+                const parseDateLocal = (dateStr: string): Date => {
+                  const parts = dateStr.split(/[-/T]/);
+                  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]) || 1);
+                };
+                
+                const firstDate = sampled.length > 0 ? parseDateLocal(sampled[0].date) : new Date();
+                const lastDate = sampled.length > 0 ? parseDateLocal(sampled[sampled.length - 1].date) : new Date();
+                const rangeDays = Math.max(1, Math.round((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)));
+                
+                const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                
+                const formatTick = (dateStr: string): string => {
+                  const d = parseDateLocal(dateStr);
+                  if (rangeDays > 730) {
+                    // Multi-year: show year only
+                    return String(d.getFullYear());
+                  } else if (rangeDays > 90) {
+                    // ~3 months to 2 years: show month + year
+                    return `${MONTH_SHORT[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
+                  } else {
+                    // Short range: show day + month
+                    return `${d.getDate()} ${MONTH_SHORT[d.getMonth()]}`;
                   }
-                  return null;
-                }} />
-                <Area type="monotone" dataKey="equity" stroke={isProfitable ? "hsl(var(--success))" : "hsl(var(--destructive))"} strokeWidth={2} fill="url(#eqGrad)" dot={false} animationDuration={800} />
-              </AreaChart>
+                };
+
+                // Calculate appropriate minTickGap based on range
+                const minGap = rangeDays > 730 ? 60 : rangeDays > 90 ? 50 : 35;
+
+                return (
+                  <AreaChart data={sampled}>
+                    <defs>
+                      <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={isProfitable ? "hsl(var(--success))" : "hsl(var(--destructive))"} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={isProfitable ? "hsl(var(--success))" : "hsl(var(--destructive))"} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                      tickLine={false}
+                      axisLine={{ stroke: "hsl(var(--border))" }}
+                      tickFormatter={formatTick}
+                      interval="preserveStartEnd"
+                      minTickGap={minGap}
+                    />
+                    <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} tickLine={false} axisLine={{ stroke: "hsl(var(--border))" }} domain={['auto', 'auto']} width={55} />
+                    <ReferenceLine y={initialCapital} stroke="hsl(var(--muted-foreground))" strokeDasharray="5 5" label={{ value: 'Start', position: 'insideTopRight', fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const value = payload[0].value as number;
+                        const retPct = ((value - initialCapital) / initialCapital) * 100;
+                        const d = parseDateLocal(payload[0].payload.date);
+                        const dateLabel = `${d.getDate()} ${MONTH_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+                        return (
+                          <div className="bg-popover border border-border rounded-lg p-2.5 shadow-lg">
+                            <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                            <p className="font-medium">{formatCurrency(value)}</p>
+                            <p className={`text-xs ${retPct >= 0 ? 'text-success' : 'text-destructive'}`}>
+                              {retPct >= 0 ? '+' : ''}{retPct.toFixed(1)}%
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }} />
+                    <Area type="monotone" dataKey="equity" stroke={isProfitable ? "hsl(var(--success))" : "hsl(var(--destructive))"} strokeWidth={2} fill="url(#eqGrad)" dot={false} animationDuration={800} />
+                  </AreaChart>
+                );
+              })()}
             </ResponsiveContainer>
           </div>
         </CardContent>
