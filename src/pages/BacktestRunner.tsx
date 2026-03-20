@@ -840,6 +840,8 @@ const BacktestRunner = () => {
                     entryRules={selectedStrategyData?.rules?.entry || []}
                     exitRules={selectedStrategyData?.rules?.exit || []}
                     walkForwardResult={walkForwardResult}
+                    startDate={startDate}
+                    endDate={endDate}
                   />
                 )}
               </motion.div>
