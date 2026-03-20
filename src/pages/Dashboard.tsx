@@ -283,7 +283,7 @@ const Dashboard = () => {
       {/* Quick Actions */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
           <Card
             className="group cursor-pointer border-border hover:border-primary/50 transition-all duration-200"
             onClick={() => navigate("/strategy-builder")}
