@@ -85,9 +85,11 @@ interface BacktestResultsProps {
   entryRules?: any[];
   exitRules?: any[];
   walkForwardResult?: WalkForwardResult | null;
+  startDate?: string;
+  endDate?: string;
 }
 
-export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [], exitRules = [], walkForwardResult }: BacktestResultsProps) => {
+export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [], exitRules = [], walkForwardResult, startDate, endDate }: BacktestResultsProps) => {
   const formatCurrency = (value: number) => {
     if (Math.abs(value) >= 100000) return `₹${(value / 100000).toFixed(2)}L`;
     return `₹${value.toLocaleString('en-IN')}`;
