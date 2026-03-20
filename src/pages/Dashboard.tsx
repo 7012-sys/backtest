@@ -15,6 +15,7 @@ import {
   Shield,
   Layers,
   FlaskConical,
+  Users,
 } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/AppLayout";
