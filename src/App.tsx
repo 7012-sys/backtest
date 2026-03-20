@@ -26,6 +26,7 @@ import Privacy from "./pages/legal/Privacy";
 import Refund from "./pages/legal/Refund";
 import Disclaimer from "./pages/legal/Disclaimer";
 import NotFound from "./pages/NotFound";
+import CommunityStrategies from "./pages/CommunityStrategies";
 
 const queryClient = new QueryClient();
 
