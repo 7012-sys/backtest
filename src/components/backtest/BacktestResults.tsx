@@ -356,6 +356,9 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
         <ProLockedSection title="Trade Log" description="Upgrade to Pro to view full trade-by-trade analysis" />
       )}
 
+      {/* Advanced Insights */}
+      <AdvancedInsights results={results} isPro={isPro} />
+
       {/* Walk-Forward */}
       {walkForwardResult && <WalkForwardResults result={walkForwardResult} />}
     </div>
