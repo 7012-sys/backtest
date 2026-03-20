@@ -34,6 +34,8 @@ import { LearningMode } from "./LearningMode";
 import { WalkForwardResults } from "./WalkForwardResults";
 import { exportBacktestToPdf } from "@/lib/export/pdfExport";
 import { exportBacktestToExcel } from "@/lib/export/excelExport";
+import { ShareStrategyButton } from "./ShareStrategyButton";
+import { AdvancedInsights } from "./AdvancedInsights";
 import { toast } from "sonner";
 import type { WalkForwardResult } from "@/lib/backtest/walkForward";
 
@@ -83,9 +85,11 @@ interface BacktestResultsProps {
   entryRules?: any[];
   exitRules?: any[];
   walkForwardResult?: WalkForwardResult | null;
+  startDate?: string;
+  endDate?: string;
 }
 
-export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [], exitRules = [], walkForwardResult }: BacktestResultsProps) => {
+export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [], exitRules = [], walkForwardResult, startDate, endDate }: BacktestResultsProps) => {
   const formatCurrency = (value: number) => {
     if (Math.abs(value) >= 100000) return `₹${(value / 100000).toFixed(2)}L`;
     return `₹${value.toLocaleString('en-IN')}`;
@@ -134,6 +138,13 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
               <FileSpreadsheet className="h-3.5 w-3.5 mr-1" /> Excel
               {!isPro && <Crown className="h-3 w-3 ml-1 text-accent" />}
             </Button>
+            <ShareStrategyButton
+              results={results}
+              symbol={symbol}
+              strategyConfig={{ entry: entryRules, exit: exitRules }}
+              startDate={startDate}
+              endDate={endDate}
+            />
           </div>
         </CardContent>
       </Card>
@@ -344,6 +355,9 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
       ) : (
         <ProLockedSection title="Trade Log" description="Upgrade to Pro to view full trade-by-trade analysis" />
       )}
+
+      {/* Advanced Insights */}
+      <AdvancedInsights results={results} isPro={isPro} />
 
       {/* Walk-Forward */}
       {walkForwardResult && <WalkForwardResults result={walkForwardResult} />}

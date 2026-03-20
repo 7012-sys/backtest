@@ -15,6 +15,7 @@ import {
   Shield,
   Layers,
   FlaskConical,
+  Users,
 } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -282,7 +283,7 @@ const Dashboard = () => {
       {/* Quick Actions */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
           <Card
             className="group cursor-pointer border-border hover:border-primary/50 transition-all duration-200"
             onClick={() => navigate("/strategy-builder")}
@@ -333,6 +334,22 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground">
                 {canRunBacktest ? "Test against historical data" : "Monthly limit reached"}
               </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="group cursor-pointer border-border hover:border-primary/50 transition-all duration-200"
+            onClick={() => navigate("/community-strategies")}
+          >
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-11 w-11 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+              <h3 className="font-semibold text-foreground text-sm mb-1">Community Strategies</h3>
+              <p className="text-xs text-muted-foreground">Discover & reuse strategies</p>
             </CardContent>
           </Card>
         </div>

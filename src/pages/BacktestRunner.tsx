@@ -413,6 +413,35 @@ const BacktestRunner = () => {
         toast.info(`${skipped} signal(s) skipped due to insufficient capital for position sizing.`, { duration: 5000 });
       }
       toast.success(`Backtest completed! ${backtestResults.totalTrades} trades executed.`);
+
+      // Store backtest run data
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          await supabase.from("backtest_runs").insert({
+            user_id: currentUser.id,
+            strategy_config: selectedStrategyData?.rules || {},
+            dataset: dataSourceMode === "csv" ? (csvFileName || "CSV Data") : symbol,
+            date_range_start: startDate || null,
+            date_range_end: endDate || null,
+            trades: (backtestResults.trades || []).slice(0, 500),
+            equity_curve: (backtestResults.equityCurve || []).filter((_: any, i: number) => i % Math.max(1, Math.floor((backtestResults.equityCurve?.length || 1) / 300)) === 0),
+            metrics: {
+              totalTrades: backtestResults.totalTrades,
+              winRate: backtestResults.winRate,
+              netPnl: backtestResults.netPnl,
+              profitFactor: backtestResults.profitFactor,
+              sharpeRatio: backtestResults.sharpeRatio,
+              maxDrawdown: backtestResults.maxDrawdown,
+              roi: backtestResults.roi,
+              cagr: backtestResults.cagr,
+            },
+          } as any);
+        }
+      } catch (storeErr) {
+        console.warn("Failed to store backtest run:", storeErr);
+      }
+
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     } catch (error: any) {
       console.error("Backtest error:", error);
@@ -840,6 +869,8 @@ const BacktestRunner = () => {
                     entryRules={selectedStrategyData?.rules?.entry || []}
                     exitRules={selectedStrategyData?.rules?.exit || []}
                     walkForwardResult={walkForwardResult}
+                    startDate={startDate}
+                    endDate={endDate}
                   />
                 )}
               </motion.div>

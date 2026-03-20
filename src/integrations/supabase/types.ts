@@ -65,6 +65,45 @@ export type Database = {
         }
         Relationships: []
       }
+      backtest_runs: {
+        Row: {
+          created_at: string
+          dataset: string
+          date_range_end: string | null
+          date_range_start: string | null
+          equity_curve: Json
+          id: string
+          metrics: Json
+          strategy_config: Json
+          trades: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dataset: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          equity_curve?: Json
+          id?: string
+          metrics?: Json
+          strategy_config?: Json
+          trades?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dataset?: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          equity_curve?: Json
+          id?: string
+          metrics?: Json
+          strategy_config?: Json
+          trades?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       backtests: {
         Row: {
           confidence_score: number | null
@@ -161,6 +200,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      community_strategies: {
+        Row: {
+          created_at: string
+          dataset_used: string
+          date_range_end: string | null
+          date_range_start: string | null
+          equity_curve: Json
+          id: string
+          performance_metrics: Json
+          strategy_config: Json
+          strategy_name: string
+          user_id: string
+          visibility: string
+        }
+        Insert: {
+          created_at?: string
+          dataset_used: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          equity_curve?: Json
+          id?: string
+          performance_metrics?: Json
+          strategy_config?: Json
+          strategy_name: string
+          user_id: string
+          visibility?: string
+        }
+        Update: {
+          created_at?: string
+          dataset_used?: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          equity_curve?: Json
+          id?: string
+          performance_metrics?: Json
+          strategy_config?: Json
+          strategy_name?: string
+          user_id?: string
+          visibility?: string
+        }
+        Relationships: []
       }
       data_versions: {
         Row: {

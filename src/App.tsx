@@ -26,6 +26,7 @@ import Privacy from "./pages/legal/Privacy";
 import Refund from "./pages/legal/Refund";
 import Disclaimer from "./pages/legal/Disclaimer";
 import NotFound from "./pages/NotFound";
+import CommunityStrategies from "./pages/CommunityStrategies";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
             
             <Route path="/strategies" element={<Strategies />} />
             <Route path="/compare-strategies" element={<StrategyComparison />} />
+            <Route path="/community-strategies" element={<CommunityStrategies />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/refund-policy" element={<Refund />} />
