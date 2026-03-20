@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,22 @@ interface RuleBuilderProps {
   type: "entry" | "exit";
 }
 
-// Indicator definitions with categories
+// Indicators that support custom periods
+const PERIOD_INDICATORS: Record<string, { base: string; label: string; defaultPeriod: number; min: number; max: number }> = {
+  sma: { base: "sma", label: "SMA", defaultPeriod: 20, min: 2, max: 500 },
+  ema: { base: "ema", label: "EMA", defaultPeriod: 20, min: 2, max: 500 },
+  rsi: { base: "rsi", label: "RSI", defaultPeriod: 14, min: 2, max: 100 },
+};
+
+// Parse indicator string like "sma_20" into { base: "sma", period: 20 }
+function parseIndicator(indicator: string): { base: string; period: number | null } {
+  const match = indicator.match(/^(sma|ema|rsi)_(\d+)$/);
+  if (match) return { base: match[1], period: parseInt(match[2]) };
+  if (PERIOD_INDICATORS[indicator]) return { base: indicator, period: PERIOD_INDICATORS[indicator].defaultPeriod };
+  return { base: indicator, period: null };
+}
+
+// Indicator definitions with categories — using base keys for period indicators
 const allIndicators = [
   // Price
   { value: "price", label: "Price", isPro: false, category: "price" },
@@ -32,26 +47,14 @@ const allIndicators = [
   { value: "low", label: "Low", isPro: false, category: "price" },
   { value: "close", label: "Close", isPro: false, category: "price" },
 
-  // Moving Averages — SMA
-  { value: "sma_9", label: "SMA (9)", isPro: false, category: "trend" },
-  { value: "sma_20", label: "SMA (20)", isPro: false, category: "trend" },
-  { value: "sma_50", label: "SMA (50)", isPro: false, category: "trend" },
-  { value: "sma_100", label: "SMA (100)", isPro: false, category: "trend" },
-  { value: "sma_200", label: "SMA (200)", isPro: false, category: "trend" },
+  // Moving Averages — SMA (single entry with custom period)
+  { value: "sma", label: "SMA", isPro: false, category: "trend", hasPeriod: true },
 
-  // Moving Averages — EMA
-  { value: "ema_8", label: "EMA (8)", isPro: false, category: "trend" },
-  { value: "ema_9", label: "EMA (9)", isPro: false, category: "trend" },
-  { value: "ema_13", label: "EMA (13)", isPro: false, category: "trend" },
-  { value: "ema_20", label: "EMA (20)", isPro: false, category: "trend" },
-  { value: "ema_21", label: "EMA (21)", isPro: false, category: "trend" },
-  { value: "ema_34", label: "EMA (34)", isPro: false, category: "trend" },
-  { value: "ema_50", label: "EMA (50)", isPro: false, category: "trend" },
+  // Moving Averages — EMA (single entry with custom period)
+  { value: "ema", label: "EMA", isPro: false, category: "trend", hasPeriod: true },
 
-  // RSI
-  { value: "rsi_7", label: "RSI (7)", isPro: false, category: "momentum" },
-  { value: "rsi_14", label: "RSI (14)", isPro: false, category: "momentum" },
-  { value: "rsi_21", label: "RSI (21)", isPro: false, category: "momentum" },
+  // RSI (single entry with custom period)
+  { value: "rsi", label: "RSI", isPro: false, category: "momentum", hasPeriod: true },
 
   // Volume
   { value: "volume", label: "Volume", isPro: false, category: "volume" },
@@ -97,7 +100,7 @@ const allIndicators = [
   { value: "prev_day_high", label: "Prev Day High (ORB)", isPro: false, category: "breakout" },
   { value: "prev_day_low", label: "Prev Day Low (ORB)", isPro: false, category: "breakout" },
 
-  // Candlestick Patterns (returns 1 when detected, 0 otherwise)
+  // Candlestick Patterns
   { value: "bullish_engulfing", label: "Bullish Engulfing", isPro: false, category: "candlestick" },
   { value: "bearish_engulfing", label: "Bearish Engulfing", isPro: false, category: "candlestick" },
   { value: "hammer", label: "Hammer", isPro: false, category: "candlestick" },
@@ -134,6 +137,17 @@ const conditions = [
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
+// Get display label for a stored indicator value like "sma_50"
+function getIndicatorDisplayLabel(indicator: string): string {
+  const { base, period } = parseIndicator(indicator);
+  const config = PERIOD_INDICATORS[base];
+  if (config && period !== null) {
+    return `${config.label} (${period})`;
+  }
+  const found = allIndicators.find(i => i.value === indicator);
+  return found?.label || indicator;
+}
+
 export const RuleBuilder = ({ rules, onChange, type }: RuleBuilderProps) => {
   const [userId, setUserId] = useState<string | undefined>();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -147,9 +161,10 @@ export const RuleBuilder = ({ rules, onChange, type }: RuleBuilderProps) => {
 
   // Count indicators used
   const usedIndicators = new Set(rules.map(r => r.indicator));
-  const freeIndicatorsUsed = [...usedIndicators].filter(ind => 
-    allIndicators.find(i => i.value === ind && !i.isPro)
-  ).length;
+  const freeIndicatorsUsed = [...usedIndicators].filter(ind => {
+    const { base } = parseIndicator(ind);
+    return allIndicators.find(i => (i.value === ind || i.value === base) && !i.isPro);
+  }).length;
 
   const addRule = () => {
     const newRule: Rule = {
@@ -162,10 +177,29 @@ export const RuleBuilder = ({ rules, onChange, type }: RuleBuilderProps) => {
     onChange([...rules, newRule]);
   };
 
+  const handleIndicatorChange = (ruleId: string, baseValue: string) => {
+    const config = PERIOD_INDICATORS[baseValue];
+    if (config) {
+      // Set indicator with default period
+      updateRule(ruleId, "indicator", `${baseValue}_${config.defaultPeriod}`);
+    } else {
+      updateRule(ruleId, "indicator", baseValue);
+    }
+  };
+
+  const handlePeriodChange = (ruleId: string, base: string, periodStr: string) => {
+    const config = PERIOD_INDICATORS[base];
+    if (!config) return;
+    const period = parseInt(periodStr);
+    if (isNaN(period) || period < config.min) return;
+    const clampedPeriod = Math.min(period, config.max);
+    updateRule(ruleId, "indicator", `${base}_${clampedPeriod}`);
+  };
+
   const updateRule = (id: string, field: keyof Rule, value: string) => {
-    // Check if trying to select a PRO indicator when not Pro user
     if (field === "indicator") {
-      const indicator = allIndicators.find(i => i.value === value);
+      const { base } = parseIndicator(value);
+      const indicator = allIndicators.find(i => i.value === value || i.value === base);
       if (indicator?.isPro && !isPro) {
         setShowUpgradeModal(true);
         return;
@@ -179,16 +213,13 @@ export const RuleBuilder = ({ rules, onChange, type }: RuleBuilderProps) => {
 
   const removeRule = (id: string) => {
     const newRules = rules.filter(rule => rule.id !== id);
-    // Remove logic from first rule
     if (newRules.length > 0 && newRules[0].logic) {
       newRules[0] = { ...newRules[0], logic: undefined };
     }
     onChange(newRules);
   };
 
-  // Separate FREE and PRO indicators for display
   const freeIndicators = allIndicators.filter(i => !i.isPro);
-  const proIndicators = allIndicators.filter(i => i.isPro);
 
   return (
     <div className="space-y-3">
@@ -214,126 +245,153 @@ export const RuleBuilder = ({ rules, onChange, type }: RuleBuilderProps) => {
         </div>
       ) : (
         <>
-          {rules.map((rule, index) => (
-            <Card key={rule.id} className="p-4 bg-muted/30 border-border">
-              <div className="flex items-start gap-3">
-                <div className="pt-2 text-muted-foreground cursor-grab">
-                  <GripVertical className="h-4 w-4" />
-                </div>
-                
-                <div className="flex-1 space-y-3">
-                  {/* Logic connector */}
-                  {index > 0 && (
-                    <Select
-                      value={rule.logic}
-                      onValueChange={(v) => updateRule(rule.id, "logic", v)}
-                    >
-                      <SelectTrigger className="w-20 h-7 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="AND">AND</SelectItem>
-                        <SelectItem value="OR">OR</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
+          {rules.map((rule, index) => {
+            const parsed = parseIndicator(rule.indicator);
+            const periodConfig = PERIOD_INDICATORS[parsed.base];
+            const hasPeriod = !!periodConfig;
+            // Determine which base value is selected in dropdown
+            const selectValue = hasPeriod ? parsed.base : rule.indicator;
+
+            return (
+              <Card key={rule.id} className="p-4 bg-muted/30 border-border">
+                <div className="flex items-start gap-3">
+                  <div className="pt-2 text-muted-foreground cursor-grab">
+                    <GripVertical className="h-4 w-4" />
+                  </div>
                   
-                  {/* Rule definition */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* Indicator Selector with PRO badges */}
-                    <Select
-                      value={rule.indicator}
-                      onValueChange={(v) => updateRule(rule.id, "indicator", v)}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Indicator" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-80">
-                        {/* Group by category */}
-                        {['price', 'trend', 'momentum', 'volatility', 'volume', 'breakout', 'candlestick'].map(cat => {
-                          const items = allIndicators.filter(i => i.category === cat);
-                          if (items.length === 0) return null;
-                          const catLabel = cat === 'price' ? '📊 Price' : cat === 'trend' ? '📈 Trend' : cat === 'momentum' ? '⚡ Momentum' : cat === 'volatility' ? '🌊 Volatility' : cat === 'volume' ? '📦 Volume' : cat === 'breakout' ? '🚀 Breakout' : '🕯️ Candlestick';
-                          return (
-                            <div key={cat}>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{catLabel}</div>
-                              {items.map(ind => (
-                                <SelectItem key={ind.value} value={ind.value}>
-                                  {ind.label}
+                  <div className="flex-1 space-y-3">
+                    {/* Logic connector */}
+                    {index > 0 && (
+                      <Select
+                        value={rule.logic}
+                        onValueChange={(v) => updateRule(rule.id, "logic", v)}
+                      >
+                        <SelectTrigger className="w-20 h-7 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AND">AND</SelectItem>
+                          <SelectItem value="OR">OR</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                    
+                    {/* Rule definition */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* Indicator Selector + Period */}
+                      <div className="flex gap-2">
+                        <Select
+                          value={selectValue}
+                          onValueChange={(v) => handleIndicatorChange(rule.id, v)}
+                        >
+                          <SelectTrigger className={`h-10 ${hasPeriod ? 'flex-1' : 'w-full'}`}>
+                            <SelectValue placeholder="Indicator">
+                              {getIndicatorDisplayLabel(rule.indicator)}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent className="max-h-80">
+                            {['price', 'trend', 'momentum', 'volatility', 'volume', 'breakout', 'candlestick'].map(cat => {
+                              const items = allIndicators.filter(i => i.category === cat);
+                              if (items.length === 0) return null;
+                              const catLabel = cat === 'price' ? '📊 Price' : cat === 'trend' ? '📈 Trend' : cat === 'momentum' ? '⚡ Momentum' : cat === 'volatility' ? '🌊 Volatility' : cat === 'volume' ? '📦 Volume' : cat === 'breakout' ? '🚀 Breakout' : '🕯️ Candlestick';
+                              return (
+                                <div key={cat}>
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{catLabel}</div>
+                                  {items.map(ind => (
+                                    <SelectItem key={ind.value} value={ind.value}>
+                                      {ind.label}
+                                      {(ind as any).hasPeriod && (
+                                        <span className="text-muted-foreground ml-1 text-xs">(custom period)</span>
+                                      )}
+                                    </SelectItem>
+                                  ))}
+                                </div>
+                              );
+                            })}
+                            {/* Coming Soon */}
+                            <div>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">🔒 Coming Soon</div>
+                              {comingSoonIndicators.map(ind => (
+                                <SelectItem key={ind.value} value={ind.value} disabled>
+                                  <span className="flex items-center gap-2 opacity-50">
+                                    {ind.label}
+                                    <Badge variant="outline" className="text-[10px] px-1 py-0">Soon</Badge>
+                                  </span>
                                 </SelectItem>
                               ))}
                             </div>
-                          );
-                        })}
-                        {/* Coming Soon */}
-                        <div>
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">🔒 Coming Soon</div>
-                          {comingSoonIndicators.map(ind => (
-                            <SelectItem key={ind.value} value={ind.value} disabled>
-                              <span className="flex items-center gap-2 opacity-50">
-                                {ind.label}
-                                <Badge variant="outline" className="text-[10px] px-1 py-0">Soon</Badge>
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </div>
-                      </SelectContent>
-                    </Select>
+                          </SelectContent>
+                        </Select>
 
-                    <Select
-                      value={rule.condition}
-                      onValueChange={(v) => updateRule(rule.id, "condition", v)}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Condition" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {conditions.map(cond => (
-                          <SelectItem key={cond.value} value={cond.value}>
-                            {cond.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        {/* Period input for SMA/EMA/RSI */}
+                        {hasPeriod && (
+                          <Input
+                            type="number"
+                            min={periodConfig.min}
+                            max={periodConfig.max}
+                            value={parsed.period ?? periodConfig.defaultPeriod}
+                            onChange={(e) => handlePeriodChange(rule.id, parsed.base, e.target.value)}
+                            className="h-10 w-20 text-center"
+                            title={`Period (${periodConfig.min}-${periodConfig.max})`}
+                          />
+                        )}
+                      </div>
 
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Value or Indicator"
-                        value={rule.value}
-                        onChange={(e) => updateRule(rule.id, "value", e.target.value)}
-                        className="h-10 flex-1"
-                        maxLength={50}
-                      />
                       <Select
-                        value={rule.value}
-                        onValueChange={(v) => updateRule(rule.id, "value", v)}
+                        value={rule.condition}
+                        onValueChange={(v) => updateRule(rule.id, "condition", v)}
                       >
-                        <SelectTrigger className="w-10 h-10 px-0 justify-center">
-                          <span className="text-xs">...</span>
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Condition" />
                         </SelectTrigger>
-                        <SelectContent className="max-h-60">
-                         {allIndicators.map(ind => (
-                            <SelectItem key={ind.value} value={ind.value}>
-                              {ind.label}
+                        <SelectContent>
+                          {conditions.map(cond => (
+                            <SelectItem key={cond.value} value={cond.value}>
+                              {cond.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Value or Indicator"
+                          value={rule.value}
+                          onChange={(e) => updateRule(rule.id, "value", e.target.value)}
+                          className="h-10 flex-1"
+                          maxLength={50}
+                        />
+                        <Select
+                          value={rule.value}
+                          onValueChange={(v) => updateRule(rule.id, "value", v)}
+                        >
+                          <SelectTrigger className="w-10 h-10 px-0 justify-center">
+                            <span className="text-xs">...</span>
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                           {allIndicators.map(ind => (
+                              <SelectItem key={ind.value} value={ind.value}>
+                                {ind.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={() => removeRule(rule.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </Card>
-          ))}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => removeRule(rule.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Card>
+            );
+          })}
           
           <Button variant="outline" size="sm" onClick={addRule} className="w-full">
             <Plus className="h-4 w-4 mr-2" />
