@@ -138,6 +138,13 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
               <FileSpreadsheet className="h-3.5 w-3.5 mr-1" /> Excel
               {!isPro && <Crown className="h-3 w-3 ml-1 text-accent" />}
             </Button>
+            <ShareStrategyButton
+              results={results}
+              symbol={symbol}
+              strategyConfig={{ entry: entryRules, exit: exitRules }}
+              startDate={startDate}
+              endDate={endDate}
+            />
           </div>
         </CardContent>
       </Card>
