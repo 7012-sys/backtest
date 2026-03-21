@@ -35,7 +35,7 @@ import { WalkForwardResults } from "./WalkForwardResults";
 import { exportBacktestToPdf } from "@/lib/export/pdfExport";
 import { exportBacktestToExcel } from "@/lib/export/excelExport";
 import { ShareStrategyButton } from "./ShareStrategyButton";
-import { AdvancedInsights } from "./AdvancedInsights";
+
 import { toast } from "sonner";
 import type { WalkForwardResult } from "@/lib/backtest/walkForward";
 
@@ -356,8 +356,6 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
         <ProLockedSection title="Trade Log" description="Upgrade to Pro to view full trade-by-trade analysis" />
       )}
 
-      {/* Advanced Insights */}
-      <AdvancedInsights results={results} isPro={isPro} />
 
       {/* Walk-Forward */}
       {walkForwardResult && <WalkForwardResults result={walkForwardResult} />}
