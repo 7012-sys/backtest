@@ -35,6 +35,7 @@ import { WalkForwardResults } from "./WalkForwardResults";
 import { exportBacktestToPdf } from "@/lib/export/pdfExport";
 import { exportBacktestToExcel } from "@/lib/export/excelExport";
 import { ShareStrategyButton } from "./ShareStrategyButton";
+import { AISummary } from "./AISummary";
 
 import { toast } from "sonner";
 import type { WalkForwardResult } from "@/lib/backtest/walkForward";
