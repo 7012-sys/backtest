@@ -35,6 +35,7 @@ import { WalkForwardResults } from "./WalkForwardResults";
 import { exportBacktestToPdf } from "@/lib/export/pdfExport";
 import { exportBacktestToExcel } from "@/lib/export/excelExport";
 import { ShareStrategyButton } from "./ShareStrategyButton";
+import { AISummary } from "./AISummary";
 
 import { toast } from "sonner";
 import type { WalkForwardResult } from "@/lib/backtest/walkForward";
@@ -356,6 +357,15 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
         <ProLockedSection title="Trade Log" description="Upgrade to Pro to view full trade-by-trade analysis" />
       )}
 
+
+      {/* AI Summary */}
+      <AISummary
+        metrics={results}
+        symbol={symbol}
+        entryRules={entryRules}
+        exitRules={exitRules}
+        isPro={isPro}
+      />
 
       {/* Walk-Forward */}
       {walkForwardResult && <WalkForwardResults result={walkForwardResult} />}
