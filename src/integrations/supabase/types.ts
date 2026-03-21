@@ -619,6 +619,35 @@ export type Database = {
           },
         ]
       }
+      strategy_likes: {
+        Row: {
+          created_at: string
+          id: string
+          strategy_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          strategy_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          strategy_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_likes_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "community_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strategy_versions: {
         Row: {
           changelog: string | null
