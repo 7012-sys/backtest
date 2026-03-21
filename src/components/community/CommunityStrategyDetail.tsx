@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, TrendingUp, TrendingDown, Calendar } from "lucide-react";
+import { Play, TrendingUp, TrendingDown, Calendar, ThumbsUp } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
@@ -21,9 +21,13 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onApply: () => void;
+  likeCount?: number;
+  isLiked?: boolean;
+  onToggleLike?: () => void;
+  isLiking?: boolean;
 }
 
-export const CommunityStrategyDetail = ({ strategy, open, onClose, onApply }: Props) => {
+export const CommunityStrategyDetail = ({ strategy, open, onClose, onApply, likeCount = 0, isLiked = false, onToggleLike, isLiking = false }: Props) => {
   const metrics = strategy.performance_metrics || {};
   const curve = Array.isArray(strategy.equity_curve) ? strategy.equity_curve : [];
   const isProfitable = (metrics.netPnl || 0) > 0;
@@ -33,8 +37,6 @@ export const CommunityStrategyDetail = ({ strategy, open, onClose, onApply }: Pr
     if (Math.abs(v) >= 100000) return `₹${(v / 100000).toFixed(2)}L`;
     return `₹${v.toLocaleString("en-IN")}`;
   };
-
-  const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   const getRules = (rules: any[] | undefined, label: string) => {
     if (!rules || rules.length === 0) return null;
@@ -56,12 +58,28 @@ export const CommunityStrategyDetail = ({ strategy, open, onClose, onApply }: Pr
     <Dialog open={open} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <div className={`p-1.5 rounded-full ${isProfitable ? 'bg-success/10' : 'bg-destructive/10'}`}>
-              {isProfitable ? <TrendingUp className="h-4 w-4 text-success" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
-            </div>
-            {strategy.strategy_name}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <div className={`p-1.5 rounded-full ${isProfitable ? 'bg-success/10' : 'bg-destructive/10'}`}>
+                {isProfitable ? <TrendingUp className="h-4 w-4 text-success" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
+              </div>
+              {strategy.strategy_name}
+            </DialogTitle>
+            {onToggleLike && (
+              <button
+                onClick={onToggleLike}
+                disabled={isLiking}
+                className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full transition-colors ${
+                  isLiked
+                    ? 'bg-accent/15 text-accent'
+                    : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                <ThumbsUp className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+                <span className="font-medium">{likeCount}</span>
+              </button>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">
