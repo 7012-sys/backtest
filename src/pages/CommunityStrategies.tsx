@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -16,6 +16,7 @@ import {
   BarChart3,
   Users,
   Loader2,
+  ThumbsUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -42,6 +43,11 @@ const CommunityStrategies = () => {
   const [selectedStrategy, setSelectedStrategy] = useState<CommunityStrategy | null>(null);
   const [user, setUser] = useState<any>(null);
 
+  // Like state: strategyId -> count, and set of liked strategy IDs
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
+  const [likingId, setLikingId] = useState<string | null>(null);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
@@ -51,6 +57,12 @@ const CommunityStrategies = () => {
   useEffect(() => {
     fetchStrategies();
   }, []);
+
+  useEffect(() => {
+    if (strategies.length > 0) {
+      fetchLikes();
+    }
+  }, [strategies, user]);
 
   const fetchStrategies = async () => {
     try {
@@ -70,8 +82,74 @@ const CommunityStrategies = () => {
     }
   };
 
+  const fetchLikes = async () => {
+    try {
+      const strategyIds = strategies.map(s => s.id);
+
+      // Fetch all likes for these strategies
+      const { data: allLikes, error } = await supabase
+        .from("strategy_likes")
+        .select("strategy_id, user_id")
+        .in("strategy_id", strategyIds);
+
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      const liked = new Set<string>();
+
+      (allLikes || []).forEach((like: any) => {
+        counts[like.strategy_id] = (counts[like.strategy_id] || 0) + 1;
+        if (user && like.user_id === user.id) {
+          liked.add(like.strategy_id);
+        }
+      });
+
+      setLikeCounts(counts);
+      setUserLikes(liked);
+    } catch (err) {
+      console.error("Error fetching likes:", err);
+    }
+  };
+
+  const handleToggleLike = async (strategyId: string) => {
+    if (!user) {
+      toast.error("Please sign in to like strategies");
+      return;
+    }
+    if (likingId) return;
+
+    setLikingId(strategyId);
+    const alreadyLiked = userLikes.has(strategyId);
+
+    try {
+      if (alreadyLiked) {
+        const { error } = await supabase
+          .from("strategy_likes")
+          .delete()
+          .eq("strategy_id", strategyId)
+          .eq("user_id", user.id);
+        if (error) throw error;
+
+        setUserLikes(prev => { const n = new Set(prev); n.delete(strategyId); return n; });
+        setLikeCounts(prev => ({ ...prev, [strategyId]: Math.max(0, (prev[strategyId] || 1) - 1) }));
+      } else {
+        const { error } = await supabase
+          .from("strategy_likes")
+          .insert({ strategy_id: strategyId, user_id: user.id });
+        if (error) throw error;
+
+        setUserLikes(prev => new Set(prev).add(strategyId));
+        setLikeCounts(prev => ({ ...prev, [strategyId]: (prev[strategyId] || 0) + 1 }));
+      }
+    } catch (err: any) {
+      console.error("Error toggling like:", err);
+      toast.error("Failed to update like");
+    } finally {
+      setLikingId(null);
+    }
+  };
+
   const handleApplyStrategy = (strategy: CommunityStrategy) => {
-    // Store strategy config in sessionStorage so BacktestRunner can pick it up
     sessionStorage.setItem("community_strategy", JSON.stringify({
       name: strategy.strategy_name,
       rules: strategy.strategy_config,
@@ -128,6 +206,8 @@ const CommunityStrategies = () => {
             {filtered.map((strategy, i) => {
               const metrics = strategy.performance_metrics || {};
               const isProfitable = (metrics.netPnl || 0) > 0;
+              const likeCount = likeCounts[strategy.id] || 0;
+              const isLiked = userLikes.has(strategy.id);
               return (
                 <motion.div
                   key={strategy.id}
@@ -170,13 +250,27 @@ const CommunityStrategies = () => {
                         </div>
                       </div>
 
-                      {/* Date */}
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-3">
-                        <Calendar className="h-3 w-3" />
-                        <span>{strategy.date_range_start && strategy.date_range_end
-                          ? `${formatDate(strategy.date_range_start)} — ${formatDate(strategy.date_range_end)}`
-                          : formatDate(strategy.created_at)
-                        }</span>
+                      {/* Date + Likes row */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>{strategy.date_range_start && strategy.date_range_end
+                            ? `${formatDate(strategy.date_range_start)} — ${formatDate(strategy.date_range_end)}`
+                            : formatDate(strategy.created_at)
+                          }</span>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleToggleLike(strategy.id); }}
+                          disabled={likingId === strategy.id}
+                          className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${
+                            isLiked
+                              ? 'bg-accent/15 text-accent'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          }`}
+                        >
+                          <ThumbsUp className={`h-3 w-3 ${isLiked ? 'fill-current' : ''}`} />
+                          <span>{likeCount}</span>
+                        </button>
                       </div>
 
                       {/* Actions */}
@@ -213,6 +307,10 @@ const CommunityStrategies = () => {
           open={!!selectedStrategy}
           onClose={() => setSelectedStrategy(null)}
           onApply={() => handleApplyStrategy(selectedStrategy)}
+          likeCount={likeCounts[selectedStrategy.id] || 0}
+          isLiked={userLikes.has(selectedStrategy.id)}
+          onToggleLike={() => handleToggleLike(selectedStrategy.id)}
+          isLiking={likingId === selectedStrategy.id}
         />
       )}
     </AppLayout>
