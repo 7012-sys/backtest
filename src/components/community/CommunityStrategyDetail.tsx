@@ -150,10 +150,17 @@ export const CommunityStrategyDetail = ({ strategy, open, onClose, onApply, like
             {getRules(strategy.strategy_config?.exit, "Exit Rules")}
           </div>
 
-          {/* Apply Button */}
-          <Button onClick={onApply} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-            <Play className="h-4 w-4 mr-2" /> Apply Strategy to Backtest
-          </Button>
+          {/* Actions */}
+          <div className="flex gap-2">
+            <Button onClick={onApply} className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
+              <Play className="h-4 w-4 mr-2" /> Apply Strategy to Backtest
+            </Button>
+            {isAdmin && onAdminDelete && (
+              <Button variant="destructive" onClick={onAdminDelete}>
+                <Trash2 className="h-4 w-4 mr-2" /> Delete
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
