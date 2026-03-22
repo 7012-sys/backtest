@@ -162,6 +162,22 @@ const CommunityStrategies = () => {
     navigate("/backtest");
   };
 
+  const handleAdminDelete = async (strategyId: string) => {
+    if (!confirm("Are you sure you want to delete this community strategy?")) return;
+    try {
+      // Delete associated likes first
+      await supabase.from("strategy_likes").delete().eq("strategy_id", strategyId);
+      const { error } = await supabase.from("community_strategies").delete().eq("id", strategyId);
+      if (error) throw error;
+      setStrategies(prev => prev.filter(s => s.id !== strategyId));
+      if (selectedStrategy?.id === strategyId) setSelectedStrategy(null);
+      toast.success("Strategy deleted successfully");
+    } catch (err: any) {
+      console.error("Error deleting strategy:", err);
+      toast.error("Failed to delete strategy");
+    }
+  };
+
   const filtered = strategies.filter(s =>
     s.strategy_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.dataset_used.toLowerCase().includes(searchQuery.toLowerCase())
