@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
   Users,
   Loader2,
   ThumbsUp,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -36,6 +38,7 @@ interface CommunityStrategy {
 }
 
 const CommunityStrategies = () => {
+  const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [strategies, setStrategies] = useState<CommunityStrategy[]>([]);
@@ -157,6 +160,22 @@ const CommunityStrategies = () => {
     }));
     toast.success("Strategy loaded! Redirecting to backtest...");
     navigate("/backtest");
+  };
+
+  const handleAdminDelete = async (strategyId: string) => {
+    if (!confirm("Are you sure you want to delete this community strategy?")) return;
+    try {
+      // Delete associated likes first
+      await supabase.from("strategy_likes").delete().eq("strategy_id", strategyId);
+      const { error } = await supabase.from("community_strategies").delete().eq("id", strategyId);
+      if (error) throw error;
+      setStrategies(prev => prev.filter(s => s.id !== strategyId));
+      if (selectedStrategy?.id === strategyId) setSelectedStrategy(null);
+      toast.success("Strategy deleted successfully");
+    } catch (err: any) {
+      console.error("Error deleting strategy:", err);
+      toast.error("Failed to delete strategy");
+    }
   };
 
   const filtered = strategies.filter(s =>
@@ -290,6 +309,16 @@ const CommunityStrategies = () => {
                         >
                           <Play className="h-3 w-3 mr-1" /> Apply
                         </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="text-xs px-2"
+                            onClick={(e) => { e.stopPropagation(); handleAdminDelete(strategy.id); }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -311,6 +340,8 @@ const CommunityStrategies = () => {
           isLiked={userLikes.has(selectedStrategy.id)}
           onToggleLike={() => handleToggleLike(selectedStrategy.id)}
           isLiking={likingId === selectedStrategy.id}
+          isAdmin={isAdmin}
+          onAdminDelete={() => handleAdminDelete(selectedStrategy.id)}
         />
       )}
     </AppLayout>
