@@ -340,6 +340,8 @@ const CommunityStrategies = () => {
           isLiked={userLikes.has(selectedStrategy.id)}
           onToggleLike={() => handleToggleLike(selectedStrategy.id)}
           isLiking={likingId === selectedStrategy.id}
+          isAdmin={isAdmin}
+          onAdminDelete={() => handleAdminDelete(selectedStrategy.id)}
         />
       )}
     </AppLayout>
