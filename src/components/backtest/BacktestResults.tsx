@@ -358,14 +358,7 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
       )}
 
 
-      {/* AI Summary */}
-      <AISummary
-        metrics={results}
-        symbol={symbol}
-        entryRules={entryRules}
-        exitRules={exitRules}
-        isPro={isPro}
-      />
+
 
       {/* Walk-Forward */}
       {walkForwardResult && <WalkForwardResults result={walkForwardResult} />}
