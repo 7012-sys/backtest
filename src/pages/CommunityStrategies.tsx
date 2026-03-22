@@ -309,6 +309,16 @@ const CommunityStrategies = () => {
                         >
                           <Play className="h-3 w-3 mr-1" /> Apply
                         </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="text-xs px-2"
+                            onClick={(e) => { e.stopPropagation(); handleAdminDelete(strategy.id); }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
