@@ -38,6 +38,7 @@ interface CommunityStrategy {
 }
 
 const CommunityStrategies = () => {
+  const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [strategies, setStrategies] = useState<CommunityStrategy[]>([]);
