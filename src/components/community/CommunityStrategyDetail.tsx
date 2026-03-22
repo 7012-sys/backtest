@@ -25,9 +25,11 @@ interface Props {
   isLiked?: boolean;
   onToggleLike?: () => void;
   isLiking?: boolean;
+  isAdmin?: boolean;
+  onAdminDelete?: () => void;
 }
 
-export const CommunityStrategyDetail = ({ strategy, open, onClose, onApply, likeCount = 0, isLiked = false, onToggleLike, isLiking = false }: Props) => {
+export const CommunityStrategyDetail = ({ strategy, open, onClose, onApply, likeCount = 0, isLiked = false, onToggleLike, isLiking = false, isAdmin = false, onAdminDelete }: Props) => {
   const metrics = strategy.performance_metrics || {};
   const curve = Array.isArray(strategy.equity_curve) ? strategy.equity_curve : [];
   const isProfitable = (metrics.netPnl || 0) > 0;
