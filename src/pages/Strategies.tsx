@@ -73,7 +73,7 @@ const Strategies = () => {
     }
   };
 
-  const handleSignOut = async () => { await supabase.auth.signOut(); navigate("/auth"); };
+  const handleSignOut = async () => { await supabase.auth.signOut({ scope: 'local' }); navigate("/auth"); };
 
   return (
     <AppLayout loading={loading} showBack backTo="/dashboard" title="All Strategies" subtitle={`${strategies.length} strategies`} onSignOut={handleSignOut}>

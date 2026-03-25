@@ -222,7 +222,7 @@ const DataLibrary = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSignOut = async () => { await supabase.auth.signOut(); navigate("/auth"); };
+  const handleSignOut = async () => { await supabase.auth.signOut({ scope: 'local' }); navigate("/auth"); };
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return "-";
