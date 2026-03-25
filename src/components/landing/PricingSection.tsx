@@ -7,13 +7,17 @@ const freeFeatures = [
   { text: "NIFTY50 Market Data", included: true },
   { text: "30 Backtests per Month", included: true },
   { text: "All 15+ Technical Indicators", included: true },
+  { text: "Custom Indicator Parameters", included: true },
   { text: "Summary Metrics & Equity Curve", included: true },
+  { text: "Community Strategy Hub", included: true },
+  { text: "Like & Upvote Strategies", included: true },
   { text: "No-Repainting Deterministic Engine", included: true },
 ];
 
 const lockedFeatures = [
   "AI Strategy Generation",
   "Custom CSV Upload",
+  "20+ Indian Stock Symbols",
   "Monthly Returns Chart",
   "Trade-by-Trade Log",
   "Walk-Forward Validation",
@@ -22,10 +26,14 @@ const lockedFeatures = [
 
 const proFeatures = [
   "Unlimited Strategies",
-  "NIFTY50 + Custom CSV Upload",
+  "NIFTY50 + 20+ Indian Stocks",
+  "Custom CSV Upload",
   "Unlimited Backtests",
   "All Timeframes (1m to 1M)",
-  "AI Strategy Generation",
+  "Custom Indicator Parameters",
+  "AI Strategy Generation (50/day)",
+  "Community Strategy Sharing",
+  "Like & Upvote Strategies",
   "Full Analytics Dashboard",
   "Monthly Returns Chart",
   "Complete Trade Log & Learning Mode",

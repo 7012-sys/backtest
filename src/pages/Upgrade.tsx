@@ -45,13 +45,13 @@ interface Subscription {
 
 const proFeatures = [
   { icon: Zap, title: "Unlimited Simulations", description: "Run as many historical simulations as you want, no monthly limits" },
-  { icon: TrendingUp, title: "AI Strategy Generation", description: "Generate strategies from plain English descriptions for study" },
-  { icon: BarChart3, title: "Custom CSV Upload (50MB)", description: "Upload your own historical data for educational analysis" },
-  { icon: Shield, title: "PDF & Excel Export", description: "Export complete simulation reports and analysis logs" },
+  { icon: TrendingUp, title: "AI Strategy Generation", description: "Generate up to 50 strategies/day from plain English descriptions" },
+  { icon: BarChart3, title: "20+ Indian Stocks", description: "HDFCBANK, TATAMOTORS, ADANIENT, POWERGRID & more built-in" },
+  { icon: Shield, title: "Custom CSV Upload (50MB)", description: "Upload your own historical data for educational analysis" },
   { icon: LineChart, title: "Walk-Forward Validation", description: "Detect overfitting with rolling train/test windows" },
-  { icon: Sparkles, title: "Monthly Returns Chart", description: "View month-by-month P&L breakdown in results" },
-  { icon: Upload, title: "Trade-by-Trade Analysis", description: "Learning mode explains every simulated entry/exit" },
-  { icon: Download, title: "Full Analytics Access", description: "Advanced metrics: Sharpe, Sortino, CAGR, Calmar" },
+  { icon: Sparkles, title: "Custom Indicator Parameters", description: "Tune SMA, RSI, MACD periods to any value you want" },
+  { icon: Upload, title: "Community Strategy Sharing", description: "Share, browse, like & apply strategies from other users" },
+  { icon: Download, title: "PDF & Excel Export", description: "Export complete simulation reports and analysis logs" },
 ];
 
 interface ComparisonRowProps {
