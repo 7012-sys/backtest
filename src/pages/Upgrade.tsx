@@ -430,8 +430,8 @@ const Upgrade = () => {
                   <Shield className="h-3 w-3" /> Coming Soon
                 </span>
               </div>
-              <ComparisonRow feature="Strategy Comparison Tool" free="Upcoming" pro="Upcoming" />
-              <ComparisonRow feature="Marketplace Access" free="Upcoming" pro="Upcoming" isLast />
+              <ComparisonRow feature="Strategy Comparison Tool" freeCheck proCheck />
+              <ComparisonRow feature="Advanced Metrics (Sharpe, CAGR…)" freeCross proCheck isLast />
             </div>
 
             {/* CTA */}
