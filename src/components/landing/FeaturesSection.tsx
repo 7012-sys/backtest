@@ -125,21 +125,21 @@ const previews = [
     ],
   },
   {
-    title: "Analytics Dashboard",
-    subtitle: "Your strategy performance at a glance",
+    title: "Community Hub",
+    subtitle: "Share, like & apply top strategies",
     metrics: [
-      { label: "Strategies", value: "2/∞" },
-      { label: "Best Return", value: "+32%" },
-      { label: "Confidence", value: "82" },
+      { label: "Strategies", value: "50+" },
+      { label: "Upvotes", value: "1.2K" },
+      { label: "Users", value: "200+" },
     ],
   },
   {
     title: "Strategy Builder",
-    subtitle: "Rule-based with 10+ indicators",
+    subtitle: "15+ indicators with custom parameters",
     metrics: [
-      { label: "Indicators", value: "10+" },
-      { label: "Versions", value: "V3" },
-      { label: "Rules", value: "4" },
+      { label: "Indicators", value: "15+" },
+      { label: "Stocks", value: "20+" },
+      { label: "Params", value: "Custom" },
     ],
   },
 ];
