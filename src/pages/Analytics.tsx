@@ -169,7 +169,7 @@ const Analytics = () => {
   const maxDrawdown = Math.min(...backtests.map(bt => bt.max_drawdown || 0), 0);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     navigate("/");
   };
 
