@@ -424,13 +424,15 @@ const Upgrade = () => {
               <ComparisonRow feature="Export PDF Report" freeCross proCheck />
               <ComparisonRow feature="Export Excel / CSV" freeCross proCheck />
 
-              {/* Upcoming Section */}
+              {/* More Features Section */}
               <div className="bg-muted/30 px-4 py-2 border-b border-t">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <Shield className="h-3 w-3" /> Coming Soon
+                  <Shield className="h-3 w-3" /> More Features
                 </span>
               </div>
               <ComparisonRow feature="Strategy Comparison Tool" freeCheck proCheck />
+              <ComparisonRow feature="Trade-by-Trade Analysis" freeCross proCheck />
+              <ComparisonRow feature="Learning Mode" freeCross proCheck />
               <ComparisonRow feature="Advanced Metrics (Sharpe, CAGR…)" freeCross proCheck isLast />
             </div>
 
