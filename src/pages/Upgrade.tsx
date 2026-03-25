@@ -374,8 +374,9 @@ const Upgrade = () => {
               </div>
               <ComparisonRow feature="Manual Strategies" free="2 max" pro="Unlimited" proHighlight />
               <ComparisonRow feature="All 15+ Indicators" freeCheck proCheck />
+              <ComparisonRow feature="Custom Indicator Parameters" freeCheck proCheck />
               <ComparisonRow feature="Strategy Versioning" freeCheck proCheck />
-              <ComparisonRow feature="AI Strategy Generation" freeCross proCheck />
+              <ComparisonRow feature="AI Strategy Generation" freeCross pro="50/day" proHighlight />
 
               {/* Backtesting Section */}
               <div className="bg-muted/30 px-4 py-2 border-b border-t">
@@ -384,10 +385,21 @@ const Upgrade = () => {
                 </span>
               </div>
               <ComparisonRow feature="Monthly Backtests" free="30 / month" pro="Unlimited" proHighlight />
-              <ComparisonRow feature="Market Data" free="NIFTY50 only" pro="NIFTY50 + CSV" proHighlight />
+              <ComparisonRow feature="Market Data" free="NIFTY50 only" pro="20+ Indian Stocks" proHighlight />
               <ComparisonRow feature="Custom CSV Upload" freeCross proCheck />
               <ComparisonRow feature="Timeframes" free="Daily only" pro="All (1m–1M)" proHighlight />
               <ComparisonRow feature="Walk-Forward Validation" freeCross proCheck />
+
+              {/* Community Section */}
+              <div className="bg-muted/30 px-4 py-2 border-b border-t">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Shield className="h-3 w-3" /> Community
+                </span>
+              </div>
+              <ComparisonRow feature="Browse Community Strategies" freeCheck proCheck />
+              <ComparisonRow feature="Like & Upvote Strategies" freeCheck proCheck />
+              <ComparisonRow feature="Share Strategies" freeCheck proCheck />
+              <ComparisonRow feature="Apply Community Strategies" freeCheck proCheck />
 
               {/* Analytics Section */}
               <div className="bg-muted/30 px-4 py-2 border-b border-t">
