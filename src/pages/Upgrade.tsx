@@ -45,13 +45,13 @@ interface Subscription {
 
 const proFeatures = [
   { icon: Zap, title: "Unlimited Simulations", description: "Run as many historical simulations as you want, no monthly limits" },
-  { icon: TrendingUp, title: "AI Strategy Generation", description: "Generate strategies from plain English descriptions for study" },
-  { icon: BarChart3, title: "Custom CSV Upload (50MB)", description: "Upload your own historical data for educational analysis" },
-  { icon: Shield, title: "PDF & Excel Export", description: "Export complete simulation reports and analysis logs" },
+  { icon: TrendingUp, title: "AI Strategy Generation", description: "Generate up to 50 strategies/day from plain English descriptions" },
+  { icon: BarChart3, title: "20+ Indian Stocks", description: "HDFCBANK, TATAMOTORS, ADANIENT, POWERGRID & more built-in" },
+  { icon: Shield, title: "Custom CSV Upload (50MB)", description: "Upload your own historical data for educational analysis" },
   { icon: LineChart, title: "Walk-Forward Validation", description: "Detect overfitting with rolling train/test windows" },
-  { icon: Sparkles, title: "Monthly Returns Chart", description: "View month-by-month P&L breakdown in results" },
-  { icon: Upload, title: "Trade-by-Trade Analysis", description: "Learning mode explains every simulated entry/exit" },
-  { icon: Download, title: "Full Analytics Access", description: "Advanced metrics: Sharpe, Sortino, CAGR, Calmar" },
+  { icon: Sparkles, title: "Custom Indicator Parameters", description: "Tune SMA, RSI, MACD periods to any value you want" },
+  { icon: Upload, title: "Community Strategy Sharing", description: "Share, browse, like & apply strategies from other users" },
+  { icon: Download, title: "PDF & Excel Export", description: "Export complete simulation reports and analysis logs" },
 ];
 
 interface ComparisonRowProps {
@@ -374,8 +374,9 @@ const Upgrade = () => {
               </div>
               <ComparisonRow feature="Manual Strategies" free="2 max" pro="Unlimited" proHighlight />
               <ComparisonRow feature="All 15+ Indicators" freeCheck proCheck />
+              <ComparisonRow feature="Custom Indicator Parameters" freeCheck proCheck />
               <ComparisonRow feature="Strategy Versioning" freeCheck proCheck />
-              <ComparisonRow feature="AI Strategy Generation" freeCross proCheck />
+              <ComparisonRow feature="AI Strategy Generation" freeCross pro="50/day" proHighlight />
 
               {/* Backtesting Section */}
               <div className="bg-muted/30 px-4 py-2 border-b border-t">
@@ -384,10 +385,21 @@ const Upgrade = () => {
                 </span>
               </div>
               <ComparisonRow feature="Monthly Backtests" free="30 / month" pro="Unlimited" proHighlight />
-              <ComparisonRow feature="Market Data" free="NIFTY50 only" pro="NIFTY50 + CSV" proHighlight />
+              <ComparisonRow feature="Market Data" free="NIFTY50 only" pro="20+ Indian Stocks" proHighlight />
               <ComparisonRow feature="Custom CSV Upload" freeCross proCheck />
               <ComparisonRow feature="Timeframes" free="Daily only" pro="All (1m–1M)" proHighlight />
               <ComparisonRow feature="Walk-Forward Validation" freeCross proCheck />
+
+              {/* Community Section */}
+              <div className="bg-muted/30 px-4 py-2 border-b border-t">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Shield className="h-3 w-3" /> Community
+                </span>
+              </div>
+              <ComparisonRow feature="Browse Community Strategies" freeCheck proCheck />
+              <ComparisonRow feature="Like & Upvote Strategies" freeCheck proCheck />
+              <ComparisonRow feature="Share Strategies" freeCheck proCheck />
+              <ComparisonRow feature="Apply Community Strategies" freeCheck proCheck />
 
               {/* Analytics Section */}
               <div className="bg-muted/30 px-4 py-2 border-b border-t">
@@ -412,14 +424,16 @@ const Upgrade = () => {
               <ComparisonRow feature="Export PDF Report" freeCross proCheck />
               <ComparisonRow feature="Export Excel / CSV" freeCross proCheck />
 
-              {/* Upcoming Section */}
+              {/* More Features Section */}
               <div className="bg-muted/30 px-4 py-2 border-b border-t">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <Shield className="h-3 w-3" /> Coming Soon
+                  <Shield className="h-3 w-3" /> More Features
                 </span>
               </div>
-              <ComparisonRow feature="Strategy Comparison Tool" free="Upcoming" pro="Upcoming" />
-              <ComparisonRow feature="Marketplace Access" free="Upcoming" pro="Upcoming" isLast />
+              <ComparisonRow feature="Strategy Comparison Tool" freeCheck proCheck />
+              <ComparisonRow feature="Trade-by-Trade Analysis" freeCross proCheck />
+              <ComparisonRow feature="Learning Mode" freeCross proCheck />
+              <ComparisonRow feature="Advanced Metrics (Sharpe, CAGR…)" freeCross proCheck isLast />
             </div>
 
             {/* CTA */}

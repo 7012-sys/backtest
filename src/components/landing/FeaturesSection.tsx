@@ -9,6 +9,9 @@ import {
   LineChart,
   GitBranch,
   FlaskConical,
+  Users,
+  ThumbsUp,
+  SlidersHorizontal,
 } from "lucide-react";
 
 const features = [
@@ -30,49 +33,73 @@ const features = [
   },
   {
     icon: Shield,
-    title: "NSE Stock Coverage",
+    title: "20+ Indian Stocks",
     description:
-      "Free users get NIFTY50 daily data. Pro users can upload any CSV dataset from any exchange or vendor.",
+      "NIFTY50, RELIANCE, HDFCBANK, TCS, TATAMOTORS, ADANIENT, POWERGRID & more. Pro users can also upload custom CSV data.",
     color: "text-success",
     bgColor: "bg-success/10",
   },
   {
-    icon: Clock,
-    title: "Auto-Detect Timeframes",
+    icon: SlidersHorizontal,
+    title: "Custom Indicator Parameters",
     description:
-      "Upload CSV data and the system auto-detects timeframe, date range, and candle count instantly.",
+      "Tune SMA, EMA, RSI, MACD & more with custom periods and values. Test SMA(9) vs SMA(50), RSI(7) vs RSI(21) — any combination.",
     color: "text-primary",
     bgColor: "bg-primary/10",
+  },
+  {
+    icon: Users,
+    title: "Community Strategy Hub",
+    description:
+      "Share your strategies with the community. Browse, like, and apply top-performing strategies shared by other users.",
+    color: "text-accent",
+    bgColor: "bg-accent/10",
+  },
+  {
+    icon: ThumbsUp,
+    title: "Like & Upvote System",
+    description:
+      "Vote on community strategies to surface the best ones. One vote per user per strategy ensures fair ranking.",
+    color: "text-success",
+    bgColor: "bg-success/10",
   },
   {
     icon: TrendingUp,
     title: "Confidence & Health Scoring",
     description:
       "Every backtest gets a confidence score and health panel — overfit risk, regime sensitivity, drawdown severity.",
-    color: "text-accent",
-    bgColor: "bg-accent/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
   },
   {
     icon: FileText,
     title: "Clear Results & Export",
     description:
       "Summary metrics, equity curve, monthly returns, and full trade log. Export to PDF or Excel (Pro).",
-    color: "text-success",
-    bgColor: "bg-success/10",
+    color: "text-accent",
+    bgColor: "bg-accent/10",
   },
   {
     icon: GitBranch,
     title: "Strategy Versioning",
     description:
       "Every edit creates a version snapshot. Backtests are tied to versions — history is never overwritten.",
-    color: "text-primary",
-    bgColor: "bg-primary/10",
+    color: "text-success",
+    bgColor: "bg-success/10",
   },
   {
     icon: FlaskConical,
     title: "Walk-Forward Validation",
     description:
       "Rolling train/test windows compare in-sample vs out-of-sample performance to detect overfitting. Pro feature.",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+  },
+  {
+    icon: Clock,
+    title: "Auto-Detect Timeframes",
+    description:
+      "Upload CSV data and the system auto-detects timeframe, date range, and candle count instantly.",
     color: "text-accent",
     bgColor: "bg-accent/10",
   },
@@ -98,21 +125,21 @@ const previews = [
     ],
   },
   {
-    title: "Analytics Dashboard",
-    subtitle: "Your strategy performance at a glance",
+    title: "Community Hub",
+    subtitle: "Share, like & apply top strategies",
     metrics: [
-      { label: "Strategies", value: "2/∞" },
-      { label: "Best Return", value: "+32%" },
-      { label: "Confidence", value: "82" },
+      { label: "Strategies", value: "50+" },
+      { label: "Upvotes", value: "1.2K" },
+      { label: "Users", value: "200+" },
     ],
   },
   {
     title: "Strategy Builder",
-    subtitle: "Rule-based with 10+ indicators",
+    subtitle: "15+ indicators with custom parameters",
     metrics: [
-      { label: "Indicators", value: "10+" },
-      { label: "Versions", value: "V3" },
-      { label: "Rules", value: "4" },
+      { label: "Indicators", value: "15+" },
+      { label: "Stocks", value: "20+" },
+      { label: "Params", value: "Custom" },
     ],
   },
 ];
