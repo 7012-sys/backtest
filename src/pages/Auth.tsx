@@ -373,7 +373,7 @@ const Auth = () => {
               onClick={async () => {
                 setGoogleLoading(true);
                 try {
-                  const { default: { lovable } } = await import("@/integrations/lovable/index");
+                  const { lovable } = await import("@/integrations/lovable/index");
                   const result = await lovable.auth.signInWithOAuth("google", {
                     redirect_uri: window.location.origin,
                   });
