@@ -9,10 +9,15 @@ import {
   Brain,
   CheckCircle,
   FlaskConical,
+  Globe,
+  Heart,
   Layers,
   LineChart,
   Plus,
+  Settings2,
+  Share2,
   Sparkles,
+  ThumbsUp,
   TrendingUp,
   Upload,
   Zap,
@@ -363,6 +368,133 @@ const Demo = () => {
                     <p className="text-xs text-accent font-medium mt-1">Pro Feature</p>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* SECTION 6: Custom Indicator Parameters */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
+              <Settings2 className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold font-heading text-foreground">Custom Indicator Parameters</h2>
+              <p className="text-sm text-muted-foreground">Fine-tune every indicator to your style</p>
+            </div>
+          </div>
+
+          <Card className="border-border">
+            <CardContent className="p-6 space-y-5">
+              <p className="text-muted-foreground">
+                Choose custom values for every indicator — use SMA(9), RSI(7), EMA(21), or any period you prefer instead of defaults.
+              </p>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { indicator: "SMA", values: ["9", "20", "50", "200"] },
+                  { indicator: "EMA", values: ["12", "21", "26", "50"] },
+                  { indicator: "RSI", values: ["7", "14", "21", "28"] },
+                  { indicator: "MACD", values: ["12,26,9", "8,21,5", "5,13,8", "Custom"] },
+                ].map((item) => (
+                  <div key={item.indicator} className="p-3 rounded-lg border border-border bg-card">
+                    <p className="text-xs font-medium text-accent mb-2">{item.indicator}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {item.values.map((v) => (
+                        <Badge key={v} variant="outline" className="text-xs">
+                          {v}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-start gap-2 text-sm text-muted-foreground bg-accent/5 p-3 rounded-lg border border-accent/10">
+                <Settings2 className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+                <span>All indicator periods are fully customizable in the Strategy Builder.</span>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* SECTION 7: 20+ Indian Stock Symbols */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Globe className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold font-heading text-foreground">20+ Indian Stock Symbols</h2>
+              <p className="text-sm text-muted-foreground">Backtest on real NSE market data</p>
+            </div>
+          </div>
+
+          <Card className="border-border">
+            <CardContent className="p-6 space-y-5">
+              <p className="text-muted-foreground">
+                Access historical data for top Indian stocks and indices — no CSV upload needed.
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                {["NIFTY50", "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "LT", "HINDUNILVR", "BAJFINANCE", "WIPRO", "MARUTI", "TATAMOTORS", "SUNPHARMA", "ONGC", "NTPC", "POWERGRID"].map((sym) => (
+                  <Badge key={sym} variant="outline" className="text-xs px-2.5 py-1">
+                    {sym}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* SECTION 8: Community Strategy Hub */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
+              <Share2 className="h-5 w-5 text-success" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold font-heading text-foreground">Community Strategy Hub</h2>
+              <p className="text-sm text-muted-foreground">Share, discover & vote on strategies</p>
+            </div>
+          </div>
+
+          <Card className="border-border">
+            <CardContent className="p-6 space-y-5">
+              <p className="text-muted-foreground">
+                Share your winning strategies with the community, discover what others are building, and upvote the best ones.
+              </p>
+
+              {/* Mock Community Cards */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {[
+                  { name: "RSI Mean Reversion", author: "trader_42", winRate: "72%", likes: 34, pnl: "+₹18,200" },
+                  { name: "MACD Momentum", author: "algo_pro", winRate: "65%", likes: 21, pnl: "+₹12,500" },
+                ].map((s) => (
+                  <div key={s.name} className="p-4 rounded-lg border border-border bg-card space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-foreground">{s.name}</p>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                        <span className="text-xs">{s.likes}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">by {s.author}</p>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-muted-foreground">Win Rate: <span className="text-foreground font-medium">{s.winRate}</span></span>
+                      <span className="text-success font-medium">{s.pnl}</span>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full text-xs">
+                      <FlaskConical className="h-3 w-3 mr-1.5" /> Clone & Backtest
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-start gap-2 text-sm text-muted-foreground bg-accent/5 p-3 rounded-lg border border-accent/10">
+                <Heart className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+                <span>Like your favorite strategies — each user gets one vote per strategy. Available for all users!</span>
               </div>
             </CardContent>
           </Card>
