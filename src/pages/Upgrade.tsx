@@ -190,11 +190,13 @@ const Upgrade = () => {
 
       if (error) throw error;
 
+      const responseData = data?.data || data;
+
       {
         // Always use inline Razorpay checkout modal
         const options = {
-          key: data.key_id,
-          subscription_id: data.subscription_id,
+          key: responseData.key_id,
+          subscription_id: responseData.subscription_id,
           name: "Trade Strategy Backtester",
           description: "Pro Plan - ₹499/month",
           handler: async function (response: any) {
