@@ -147,12 +147,12 @@ const StrategyBuilder = () => {
   };
 
   const headerRightContent = (
-    <div className="flex items-center gap-2">
-      <Button variant="outline" onClick={handleSave} disabled={saving}>
-        <Save className="h-4 w-4 mr-2" /> Save
+    <div className="flex items-center gap-1 sm:gap-2">
+      <Button variant="outline" size="sm" onClick={handleSave} disabled={saving} className="text-xs sm:text-sm px-2 sm:px-3">
+        <Save className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> Save
       </Button>
-      <Button onClick={handleSaveAndBacktest} disabled={saving} className="bg-accent text-accent-foreground hover:bg-accent/90">
-        <Play className="h-4 w-4 mr-2" /> Save & Test
+      <Button size="sm" onClick={handleSaveAndBacktest} disabled={saving} className="bg-accent text-accent-foreground hover:bg-accent/90 text-xs sm:text-sm px-2 sm:px-3">
+        <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> <span className="hidden xs:inline">Save &</span> Test
       </Button>
     </div>
   );
