@@ -70,17 +70,11 @@ const Auth = () => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        // Check if email is confirmed
-        if (session.user.email_confirmed_at) {
+      // Only redirect on explicit sign-in or token refresh, NOT on initial session restore
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        if (session?.user?.email_confirmed_at) {
           navigate("/dashboard");
         }
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && session.user.email_confirmed_at) {
-        navigate("/dashboard");
       }
     });
 
