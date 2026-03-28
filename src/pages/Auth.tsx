@@ -146,6 +146,9 @@ const Auth = () => {
         setPassword("");
         setTermsAccepted(false);
       } else {
+        // Flag password sign-in so onAuthStateChange doesn't double-navigate
+        passwordSignInRef.current?.(true);
+        
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
