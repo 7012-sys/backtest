@@ -34,25 +34,30 @@ const Dashboard = () => {
   useEffect(() => {
     let mounted = true;
 
-    const handleUser = (user: User | null) => {
-      if (!mounted) return;
-      setUser(user);
-      setLoading(false);
-      if (!user) {
-        navigate("/auth");
-      } else if (!user.email_confirmed_at) {
-        navigate("/auth", { state: { showVerification: true, email: user.email } });
-      }
-    };
-
-    // Get initial session first
+    // Restore session from storage first
     supabase.auth.getSession().then(({ data: { session } }) => {
-      handleUser(session?.user ?? null);
+      if (!mounted) return;
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      setLoading(false);
+      if (!currentUser) {
+        navigate("/auth", { replace: true });
+      } else if (!currentUser.email_confirmed_at) {
+        navigate("/auth", { state: { showVerification: true, email: currentUser.email }, replace: true });
+      }
     });
 
-    // Then listen for changes
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
-      handleUser(session?.user ?? null);
+    // Listen for subsequent auth changes (sign-out, token refresh) — NOT initial session
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      // Skip INITIAL_SESSION — already handled by getSession above
+      if (event === "INITIAL_SESSION") return;
+      
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (!currentUser) {
+        navigate("/auth", { replace: true });
+      }
     });
 
     return () => {
