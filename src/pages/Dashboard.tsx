@@ -26,81 +26,40 @@ import { UsageProgressBar } from "@/components/dashboard/UsageProgressBar";
 import { StrategyList } from "@/components/dashboard/StrategyList";
 import { toast } from "sonner";
 
-interface Subscription {
-  plan: string;
-  status: string;
-  current_period_end: string | null;
-}
-
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
 
   useEffect(() => {
-    const checkUserAccess = async (user: User) => {
-      if (!user.email_confirmed_at) {
+    let mounted = true;
+
+    const handleUser = (user: User | null) => {
+      if (!mounted) return;
+      setUser(user);
+      setLoading(false);
+      if (!user) {
+        navigate("/auth");
+      } else if (!user.email_confirmed_at) {
         navigate("/auth", { state: { showVerification: true, email: user.email } });
-        return false;
       }
-      return true;
     };
 
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        setTimeout(() => checkUserAccess(session.user), 0);
-      }
-    });
-
+    // Get initial session first
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        checkUserAccess(session.user);
-      }
+      handleUser(session?.user ?? null);
     });
 
-    return () => authSub.unsubscribe();
+    // Then listen for changes
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleUser(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      authSub.unsubscribe();
+    };
   }, [navigate]);
-
-  useEffect(() => {
-    if (user) {
-      fetchSubscription();
-    }
-  }, [user]);
-
-  const fetchSubscription = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("subscriptions")
-      .select("plan, status, current_period_end")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (data) {
-      // Auto-downgrade expired pro subscriptions
-      if (
-        data.plan !== "free" &&
-        data.current_period_end &&
-        new Date(data.current_period_end) < new Date()
-      ) {
-        await supabase
-          .from("subscriptions")
-          .update({ plan: "free", status: "expired" })
-          .eq("user_id", user.id);
-        setSubscription({ plan: "free", status: "expired", current_period_end: data.current_period_end });
-        toast.info("Your Pro plan has expired. You've been moved to the Free plan.");
-      } else {
-        setSubscription(data);
-      }
-    }
-  };
 
   const { strategies, backtests, isLoading: dataLoading } = useDashboardData(user?.id);
   const {
