@@ -68,18 +68,17 @@ const Auth = () => {
     }
   }, [locationState]);
 
+  // Only handle OAuth redirects (Google sign-in callback), not password sign-in
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Only redirect on explicit sign-in or token refresh, NOT on initial session restore
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        if (session?.user?.email_confirmed_at) {
-          navigate("/dashboard");
-        }
+      // Handle OAuth callback (Google) — password sign-in navigates directly in handleSubmit
+      if (event === "SIGNED_IN" && session?.user?.email_confirmed_at && !loading) {
+        navigate("/dashboard", { replace: true });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, loading]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; terms?: string } = {};
@@ -162,10 +161,8 @@ const Auth = () => {
           return;
         }
 
-        toast({
-          title: "Welcome back!",
-          description: "You have been signed in successfully.",
-        });
+        // Navigate directly — don't rely on onAuthStateChange for password sign-in
+        navigate("/dashboard", { replace: true });
       }
     } catch (error: any) {
       toast({
