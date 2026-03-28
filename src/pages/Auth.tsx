@@ -57,6 +57,7 @@ const Auth = () => {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
+  const passwordSignInRef = useRef<((val: boolean) => void) | null>(null);
 
   // Handle redirect from dashboard for unverified users
   useEffect(() => {
