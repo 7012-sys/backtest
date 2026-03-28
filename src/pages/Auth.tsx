@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -57,6 +57,7 @@ const Auth = () => {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
+  const passwordSignInRef = useRef<((val: boolean) => void) | null>(null);
 
   // Handle redirect from dashboard for unverified users
   useEffect(() => {
@@ -70,15 +71,24 @@ const Auth = () => {
 
   // Only handle OAuth redirects (Google sign-in callback), not password sign-in
   useEffect(() => {
+    let isPasswordSignIn = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Handle OAuth callback (Google) — password sign-in navigates directly in handleSubmit
-      if (event === "SIGNED_IN" && session?.user?.email_confirmed_at && !loading) {
+      // Skip initial session restore and password sign-in (handled in handleSubmit)
+      if (event === "INITIAL_SESSION") return;
+      if (isPasswordSignIn) return;
+      
+      // Handle OAuth callback (Google)
+      if (event === "SIGNED_IN" && session?.user?.email_confirmed_at) {
         navigate("/dashboard", { replace: true });
       }
     });
 
+    // Expose setter for handleSubmit to flag password sign-in
+    passwordSignInRef.current = (val: boolean) => { isPasswordSignIn = val; };
+
     return () => subscription.unsubscribe();
-  }, [navigate, loading]);
+  }, [navigate]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; terms?: string } = {};
@@ -136,6 +146,9 @@ const Auth = () => {
         setPassword("");
         setTermsAccepted(false);
       } else {
+        // Flag password sign-in so onAuthStateChange doesn't double-navigate
+        passwordSignInRef.current?.(true);
+        
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -165,6 +178,8 @@ const Auth = () => {
         navigate("/dashboard", { replace: true });
       }
     } catch (error: any) {
+      // Reset flag so OAuth can still work
+      passwordSignInRef.current?.(false);
       toast({
         title: isSignUp ? "Sign Up Failed" : "Sign In Failed",
         description: error.message || "An error occurred. Please try again.",
