@@ -178,6 +178,8 @@ const Auth = () => {
         navigate("/dashboard", { replace: true });
       }
     } catch (error: any) {
+      // Reset flag so OAuth can still work
+      passwordSignInRef.current?.(false);
       toast({
         title: isSignUp ? "Sign Up Failed" : "Sign In Failed",
         description: error.message || "An error occurred. Please try again.",
