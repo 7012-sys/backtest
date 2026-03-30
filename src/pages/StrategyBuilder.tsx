@@ -146,22 +146,10 @@ const StrategyBuilder = () => {
     }
   };
 
-  const headerRightContent = (
-    <div className="flex items-center gap-1 sm:gap-2">
-      <Button variant="outline" size="sm" onClick={handleSave} disabled={saving} className="text-xs sm:text-sm px-2 sm:px-3">
-        <Save className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> Save
-      </Button>
-      <Button size="sm" onClick={handleSaveAndBacktest} disabled={saving} className="bg-accent text-accent-foreground hover:bg-accent/90 text-xs sm:text-sm px-2 sm:px-3">
-        <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> <span className="hidden xs:inline">Save &</span> Test
-      </Button>
-    </div>
-  );
-
   return (
     <AppLayout 
       loading={loading} showBack backTo="/dashboard"
       title="Create Strategy" subtitle="Build trading rules step by step"
-      rightContent={headerRightContent}
     >
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Builder Form */}
@@ -302,6 +290,16 @@ const StrategyBuilder = () => {
               <RuleBuilder rules={exitRules} onChange={setExitRules} type="exit" />
             </CardContent>
           </Card>
+
+          {/* Save & Test Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button variant="outline" onClick={handleSave} disabled={saving} className="flex-1">
+              <Save className="h-4 w-4 mr-2" /> Save Strategy
+            </Button>
+            <Button onClick={handleSaveAndBacktest} disabled={saving} className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
+              <Play className="h-4 w-4 mr-2" /> Save & Test
+            </Button>
+          </div>
         </div>
 
         {/* Preview Sidebar */}
