@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -57,7 +57,6 @@ const Auth = () => {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
-  const passwordSignInRef = useRef<((val: boolean) => void) | null>(null);
 
   // Handle redirect from dashboard for unverified users
   useEffect(() => {
@@ -69,23 +68,21 @@ const Auth = () => {
     }
   }, [locationState]);
 
-  // Only handle OAuth redirects (Google sign-in callback), not password sign-in
   useEffect(() => {
-    let isPasswordSignIn = false;
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Skip initial session restore and password sign-in (handled in handleSubmit)
-      if (event === "INITIAL_SESSION") return;
-      if (isPasswordSignIn) return;
-      
-      // Handle OAuth callback (Google)
-      if (event === "SIGNED_IN" && session?.user?.email_confirmed_at) {
-        navigate("/dashboard", { replace: true });
+      if (session?.user) {
+        // Check if email is confirmed
+        if (session.user.email_confirmed_at) {
+          navigate("/dashboard");
+        }
       }
     });
 
-    // Expose setter for handleSubmit to flag password sign-in
-    passwordSignInRef.current = (val: boolean) => { isPasswordSignIn = val; };
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && session.user.email_confirmed_at) {
+        navigate("/dashboard");
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
@@ -146,9 +143,6 @@ const Auth = () => {
         setPassword("");
         setTermsAccepted(false);
       } else {
-        // Flag password sign-in so onAuthStateChange doesn't double-navigate
-        passwordSignInRef.current?.(true);
-        
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -174,12 +168,12 @@ const Auth = () => {
           return;
         }
 
-        // Navigate directly — don't rely on onAuthStateChange for password sign-in
-        navigate("/dashboard", { replace: true });
+        toast({
+          title: "Welcome back!",
+          description: "You have been signed in successfully.",
+        });
       }
     } catch (error: any) {
-      // Reset flag so OAuth can still work
-      passwordSignInRef.current?.(false);
       toast({
         title: isSignUp ? "Sign Up Failed" : "Sign In Failed",
         description: error.message || "An error occurred. Please try again.",

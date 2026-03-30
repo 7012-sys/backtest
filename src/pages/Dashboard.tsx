@@ -26,45 +26,81 @@ import { UsageProgressBar } from "@/components/dashboard/UsageProgressBar";
 import { StrategyList } from "@/components/dashboard/StrategyList";
 import { toast } from "sonner";
 
+interface Subscription {
+  plan: string;
+  status: string;
+  current_period_end: string | null;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
-    // Restore session from storage first
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      setLoading(false);
-      if (!currentUser) {
-        navigate("/auth", { replace: true });
-      } else if (!currentUser.email_confirmed_at) {
-        navigate("/auth", { state: { showVerification: true, email: currentUser.email }, replace: true });
+    const checkUserAccess = async (user: User) => {
+      if (!user.email_confirmed_at) {
+        navigate("/auth", { state: { showVerification: true, email: user.email } });
+        return false;
       }
-    });
-
-    // Listen for subsequent auth changes (sign-out, token refresh) — NOT initial session
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
-      // Skip INITIAL_SESSION — already handled by getSession above
-      if (event === "INITIAL_SESSION") return;
-      
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (!currentUser) {
-        navigate("/auth", { replace: true });
-      }
-    });
-
-    return () => {
-      mounted = false;
-      authSub.unsubscribe();
+      return true;
     };
+
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        navigate("/auth");
+      } else {
+        setTimeout(() => checkUserAccess(session.user), 0);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        navigate("/auth");
+      } else {
+        checkUserAccess(session.user);
+      }
+    });
+
+    return () => authSub.unsubscribe();
   }, [navigate]);
+
+  useEffect(() => {
+    if (user) {
+      fetchSubscription();
+    }
+  }, [user]);
+
+  const fetchSubscription = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("plan, status, current_period_end")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (data) {
+      // Auto-downgrade expired pro subscriptions
+      if (
+        data.plan !== "free" &&
+        data.current_period_end &&
+        new Date(data.current_period_end) < new Date()
+      ) {
+        await supabase
+          .from("subscriptions")
+          .update({ plan: "free", status: "expired" })
+          .eq("user_id", user.id);
+        setSubscription({ plan: "free", status: "expired", current_period_end: data.current_period_end });
+        toast.info("Your Pro plan has expired. You've been moved to the Free plan.");
+      } else {
+        setSubscription(data);
+      }
+    }
+  };
 
   const { strategies, backtests, isLoading: dataLoading } = useDashboardData(user?.id);
   const {

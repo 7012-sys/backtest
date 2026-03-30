@@ -66,7 +66,6 @@ export const useDashboardData = (userId: string | undefined) => {
       return data as Strategy[];
     },
     enabled: !!userId,
-    staleTime: 30_000,
   });
 
   // Fetch backtests
@@ -84,7 +83,6 @@ export const useDashboardData = (userId: string | undefined) => {
       return data as Backtest[];
     },
     enabled: !!userId,
-    staleTime: 30_000,
   });
 
   // Calculate metrics

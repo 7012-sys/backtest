@@ -78,27 +78,13 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
     setIsLoading(true);
     
     try {
-      // Fetch all data in parallel
-      const [subResult, profileResult, aiResult] = await Promise.all([
-        supabase
-          .from("subscriptions")
-          .select("plan, status, current_period_end")
-          .eq("user_id", userId)
-          .maybeSingle(),
-        supabase
-          .from("profiles")
-          .select("total_backtests_used, uploaded_files_count, strategies_count, monthly_backtests_used, monthly_reset_date")
-          .eq("user_id", userId)
-          .maybeSingle(),
-        supabase
-          .from("strategies")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", userId)
-          .eq("is_ai_generated", true),
-      ]);
+      // Check subscription status
+      const { data: subscription, error: subError } = await supabase
+        .from("subscriptions")
+        .select("plan, status, current_period_end")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-      // Process subscription
-      const { data: subscription, error: subError } = subResult;
       if (!subError && subscription) {
         const isProPlan = subscription.plan === "pro" && subscription.status === "active";
         const periodEnd = subscription.current_period_end ? new Date(subscription.current_period_end) : null;
@@ -107,7 +93,7 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
         if (isProPlan && expired) {
           setIsPro(false);
           setIsExpired(true);
-          supabase
+          await supabase
             .from("subscriptions")
             .update({ plan: "free", status: "expired" })
             .eq("user_id", userId);
@@ -115,22 +101,30 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
           setIsPro(isProPlan);
           setIsExpired(false);
         }
+        
         setExpiryDate(periodEnd);
       }
 
-      // Process profile
-      const { data: profile, error: profileError } = profileResult;
+      // Fetch profile with usage counts
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("total_backtests_used, uploaded_files_count, strategies_count, monthly_backtests_used, monthly_reset_date")
+        .eq("user_id", userId)
+        .maybeSingle();
+
       if (!profileError && profile) {
         setTotalBacktestsUsed(profile.total_backtests_used || 0);
         setUploadedFilesCount(profile.uploaded_files_count || 0);
         setStrategiesCount(profile.strategies_count || 0);
         
+        // Check if monthly reset is needed
         const resetDate = profile.monthly_reset_date ? new Date(profile.monthly_reset_date) : new Date();
         const now = new Date();
         const needsReset = resetDate.getFullYear() !== now.getFullYear() || resetDate.getMonth() !== now.getMonth();
         
         if (needsReset) {
-          supabase
+          // Reset monthly counter
+          await supabase
             .from("profiles")
             .update({ monthly_backtests_used: 0, monthly_reset_date: now.toISOString().split('T')[0] })
             .eq("user_id", userId);
@@ -140,9 +134,15 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
         }
       }
 
-      // Process AI count
-      if (!aiResult.error) {
-        setAIStrategiesUsed(aiResult.count || 0);
+      // Fetch total AI strategies used
+      const { count: aiCount, error: aiError } = await supabase
+        .from("strategies")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_ai_generated", true);
+
+      if (!aiError) {
+        setAIStrategiesUsed(aiCount || 0);
       }
     } catch (error) {
       console.error("Error fetching usage:", error);
