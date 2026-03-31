@@ -58,7 +58,10 @@ const ChartContainer = React.forwardRef<
 });
 ChartContainer.displayName = "Chart";
 
+const sanitizeChartId = (id: string) => id.replace(/[^a-zA-Z0-9-_]/g, '');
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
+  const safeId = sanitizeChartId(id);
   const colorConfig = Object.entries(config).filter(([_, config]) => config.theme || config.color);
 
   if (!colorConfig.length) {
