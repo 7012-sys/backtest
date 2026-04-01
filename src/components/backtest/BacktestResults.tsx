@@ -101,9 +101,9 @@ export const BacktestResults = ({ results, symbol, isPro = false, entryRules = [
     exportBacktestToPdf({ ...results, symbol });
     toast.success("PDF exported!");
   };
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!isPro) { toast.error("Excel export is a Pro feature. Upgrade to unlock!"); return; }
-    exportBacktestToExcel({ ...results, symbol });
+    await exportBacktestToExcel({ ...results, symbol });
     toast.success("Excel exported!");
   };
 
