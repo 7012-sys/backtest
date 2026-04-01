@@ -1,5 +1,5 @@
 // Excel Export Module (Pro Feature)
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface ExportData {
   symbol: string;
@@ -34,18 +34,20 @@ interface ExportData {
   monthlyReturns?: Array<{ month: string; return: number }>;
 }
 
-// Ensure value is a clean number for Excel
 function toNum(val: any): number {
   const n = Number(val);
   return isNaN(n) ? 0 : Math.round(n * 100) / 100;
 }
 
-export function exportBacktestToExcel(data: ExportData) {
-  const wb = XLSX.utils.book_new();
+export async function exportBacktestToExcel(data: ExportData) {
+  const wb = new ExcelJS.Workbook();
 
   // Sheet 1: Summary
-  const summaryData = [
-    ['TradeTest - Backtest Report'],
+  const summarySheet = wb.addWorksheet('Summary');
+  summarySheet.columns = [{ width: 20 }, { width: 20 }];
+
+  const summaryRows: Array<[string, string | number] | []> = [
+    ['TradeTest - Backtest Report', ''],
     ['Symbol', data.symbol],
     ['Generated', new Date().toISOString().split('T')[0]],
     [],
@@ -62,58 +64,70 @@ export function exportBacktestToExcel(data: ExportData) {
     ['Final Equity', toNum(data.finalEquity)],
   ];
 
-  if (data.sortinoRatio != null) summaryData.push(['Sortino Ratio', toNum(data.sortinoRatio)]);
-  if (data.calmarRatio != null) summaryData.push(['Calmar Ratio', toNum(data.calmarRatio)]);
-  if (data.cagr != null) summaryData.push(['CAGR (%)', toNum(data.cagr)]);
-  if (data.recoveryFactor != null) summaryData.push(['Recovery Factor', toNum(data.recoveryFactor)]);
-  if (data.expectancy != null) summaryData.push(['Expectancy', toNum(data.expectancy)]);
+  if (data.sortinoRatio != null) summaryRows.push(['Sortino Ratio', toNum(data.sortinoRatio)]);
+  if (data.calmarRatio != null) summaryRows.push(['Calmar Ratio', toNum(data.calmarRatio)]);
+  if (data.cagr != null) summaryRows.push(['CAGR (%)', toNum(data.cagr)]);
+  if (data.recoveryFactor != null) summaryRows.push(['Recovery Factor', toNum(data.recoveryFactor)]);
+  if (data.expectancy != null) summaryRows.push(['Expectancy', toNum(data.expectancy)]);
 
-  const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-  summarySheet['!cols'] = [{ wch: 20 }, { wch: 20 }];
-  XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+  summaryRows.forEach(row => summarySheet.addRow(row));
 
   // Sheet 2: Trade Log
   if (data.trades && data.trades.length > 0) {
-    const tradeHeaders = ['Trade ID', 'Entry Date', 'Exit Date', 'Side', 'Quantity', 'Entry Price', 'Exit Price', 'P&L', 'P&L %', 'Holding Days'];
-    const tradeRows = data.trades.map(t => [
-      t.id,
-      t.entryDate,
-      t.exitDate,
-      t.side.toUpperCase(),
-      Number(t.quantity) || 0,
-      toNum(t.entryPrice),
-      toNum(t.exitPrice),
-      toNum(t.pnl),
-      toNum(t.pnlPercent),
-      Number(t.holdingDays) || 0,
-    ]);
-    const tradeSheet = XLSX.utils.aoa_to_sheet([tradeHeaders, ...tradeRows]);
-    tradeSheet['!cols'] = tradeHeaders.map(() => ({ wch: 14 }));
-    XLSX.utils.book_append_sheet(wb, tradeSheet, 'Trade Log');
+    const tradeSheet = wb.addWorksheet('Trade Log');
+    tradeSheet.columns = [
+      { header: 'Trade ID', width: 14 },
+      { header: 'Entry Date', width: 14 },
+      { header: 'Exit Date', width: 14 },
+      { header: 'Side', width: 14 },
+      { header: 'Quantity', width: 14 },
+      { header: 'Entry Price', width: 14 },
+      { header: 'Exit Price', width: 14 },
+      { header: 'P&L', width: 14 },
+      { header: 'P&L %', width: 14 },
+      { header: 'Holding Days', width: 14 },
+    ];
+    data.trades.forEach(t => {
+      tradeSheet.addRow([
+        t.id, t.entryDate, t.exitDate, t.side.toUpperCase(),
+        Number(t.quantity) || 0, toNum(t.entryPrice), toNum(t.exitPrice),
+        toNum(t.pnl), toNum(t.pnlPercent), Number(t.holdingDays) || 0,
+      ]);
+    });
   }
 
   // Sheet 3: Equity Curve
   if (data.equityCurve && data.equityCurve.length > 0) {
-    const eqHeaders = ['Day', 'Date', 'Equity'];
-    const eqRows = data.equityCurve.map(p => [
-      Number(p.day) || 0,
-      p.date,
-      toNum(p.equity),
-    ]);
-    const eqSheet = XLSX.utils.aoa_to_sheet([eqHeaders, ...eqRows]);
-    XLSX.utils.book_append_sheet(wb, eqSheet, 'Equity Curve');
+    const eqSheet = wb.addWorksheet('Equity Curve');
+    eqSheet.columns = [
+      { header: 'Day', width: 10 },
+      { header: 'Date', width: 14 },
+      { header: 'Equity', width: 14 },
+    ];
+    data.equityCurve.forEach(p => {
+      eqSheet.addRow([Number(p.day) || 0, p.date, toNum(p.equity)]);
+    });
   }
 
   // Sheet 4: Monthly Returns
   if (data.monthlyReturns && data.monthlyReturns.length > 0) {
-    const mHeaders = ['Month', 'Return (%)'];
-    const mRows = data.monthlyReturns.map(m => [
-      m.month,
-      toNum(m.return),
-    ]);
-    const mSheet = XLSX.utils.aoa_to_sheet([mHeaders, ...mRows]);
-    XLSX.utils.book_append_sheet(wb, mSheet, 'Monthly Returns');
+    const mSheet = wb.addWorksheet('Monthly Returns');
+    mSheet.columns = [
+      { header: 'Month', width: 14 },
+      { header: 'Return (%)', width: 14 },
+    ];
+    data.monthlyReturns.forEach(m => {
+      mSheet.addRow([m.month, toNum(m.return)]);
+    });
   }
 
-  XLSX.writeFile(wb, `TradeTest_${data.symbol}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  // Generate and download
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `TradeTest_${data.symbol}_${new Date().toISOString().split('T')[0]}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
