@@ -608,6 +608,22 @@ export function getIndicatorValue(
       return getPrevDayHigh(data, index);
     case 'prev_day_low':
       return getPrevDayLow(data, index);
+
+    // ─── Price Action Indicators ─────────────────────────────────────────
+    case 'opening_range_high':
+    case 'orb_high':
+      return getOpeningRangeHigh(data, index);
+    case 'opening_range_low':
+    case 'orb_low':
+      return getOpeningRangeLow(data, index);
+    case 'day_high':
+      return getDayHigh(data, index);
+    case 'day_low':
+      return getDayLow(data, index);
+    case 'gap_up':
+      return detectGapUp(data, index);
+    case 'gap_down':
+      return detectGapDown(data, index);
     
     default:
       // Try dynamic breakout patterns: high_N, low_N, volume_sma_N
