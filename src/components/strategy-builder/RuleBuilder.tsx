@@ -105,6 +105,8 @@ const allIndicators = [
   { value: "day_low", label: "Day Low", isPro: false, category: "breakout" },
   { value: "gap_up", label: "Gap Up", isPro: false, category: "breakout" },
   { value: "gap_down", label: "Gap Down", isPro: false, category: "breakout" },
+  { value: "support_level", label: "Support Level", isPro: false, category: "breakout" },
+  { value: "resistance_level", label: "Resistance Level", isPro: false, category: "breakout" },
 
   // Candlestick Patterns
   { value: "bullish_engulfing", label: "Bullish Engulfing", isPro: false, category: "candlestick" },
