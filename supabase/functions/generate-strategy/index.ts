@@ -19,6 +19,7 @@ const PRICE_ACTION_INDICATORS = [
   "Prev Day High", "Prev Day Low",
   "Opening Range High", "Opening Range Low",
   "Day High", "Day Low",
+  "Support Level", "Resistance Level",
   "Inside Bar", "Bullish Engulfing", "Bearish Engulfing",
   "Hammer", "Shooting Star", "Doji",
   "High 20", "Low 20",
