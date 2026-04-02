@@ -60,6 +60,19 @@ const AI_INDICATOR_MAP: Record<string, string> = {
   'prev day high': 'prev_day_high',
   'prev day low': 'prev_day_low',
   'volume sma': 'volume_sma_20',
+  // Price Action - Opening Range
+  'opening range high': 'opening_range_high',
+  'opening range low': 'opening_range_low',
+  'orb high': 'opening_range_high',
+  'orb low': 'opening_range_low',
+  // Price Action - Day levels
+  'day high': 'day_high',
+  'day low': 'day_low',
+  'high 20': 'high_20',
+  'low 20': 'low_20',
+  // Price Action - Gap
+  'gap up': 'gap_up',
+  'gap down': 'gap_down',
 };
 
 export function normalizeAIRules(rules: any[]): StrategyRule[] {

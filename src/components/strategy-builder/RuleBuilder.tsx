@@ -92,13 +92,19 @@ const allIndicators = [
   { value: "obv", label: "OBV", isPro: false, category: "volume" },
   { value: "vwap", label: "VWAP", isPro: false, category: "volume" },
 
-  // Breakout Indicators
+  // Breakout & Price Action
   { value: "high_20", label: "20-Day High", isPro: false, category: "breakout" },
   { value: "low_20", label: "20-Day Low", isPro: false, category: "breakout" },
   { value: "high_52w", label: "52-Week High", isPro: false, category: "breakout" },
   { value: "low_52w", label: "52-Week Low", isPro: false, category: "breakout" },
-  { value: "prev_day_high", label: "Prev Day High (ORB)", isPro: false, category: "breakout" },
-  { value: "prev_day_low", label: "Prev Day Low (ORB)", isPro: false, category: "breakout" },
+  { value: "prev_day_high", label: "Prev Day High", isPro: false, category: "breakout" },
+  { value: "prev_day_low", label: "Prev Day Low", isPro: false, category: "breakout" },
+  { value: "opening_range_high", label: "Opening Range High (ORB)", isPro: false, category: "breakout" },
+  { value: "opening_range_low", label: "Opening Range Low (ORB)", isPro: false, category: "breakout" },
+  { value: "day_high", label: "Day High", isPro: false, category: "breakout" },
+  { value: "day_low", label: "Day Low", isPro: false, category: "breakout" },
+  { value: "gap_up", label: "Gap Up", isPro: false, category: "breakout" },
+  { value: "gap_down", label: "Gap Down", isPro: false, category: "breakout" },
 
   // Candlestick Patterns
   { value: "bullish_engulfing", label: "Bullish Engulfing", isPro: false, category: "candlestick" },
@@ -119,8 +125,6 @@ const comingSoonIndicators = [
   { value: "support_level", label: "Support Level", category: "coming_soon" },
   { value: "resistance_level", label: "Resistance Level", category: "coming_soon" },
   { value: "relative_strength", label: "Relative Strength (vs Index)", category: "coming_soon" },
-  { value: "gap_up", label: "Gap Up", category: "coming_soon" },
-  { value: "gap_down", label: "Gap Down", category: "coming_soon" },
   { value: "iron_condor", label: "Iron Condor (Options)", category: "coming_soon" },
   { value: "straddle", label: "Straddle (Options)", category: "coming_soon" },
 ];
