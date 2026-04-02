@@ -687,6 +687,12 @@ export function getIndicatorValue(
     case 'gap_down':
       return detectGapDown(data, index);
     
+    // ─── Support & Resistance Levels ─────────────────────────────────────
+    case 'support_level':
+      return calculateSupportLevel(data, index);
+    case 'resistance_level':
+      return calculateResistanceLevel(data, index);
+    
     default:
       // Try dynamic breakout patterns: high_N, low_N, volume_sma_N
       const highMatch = ind.match(/^high_(\d+)$/);

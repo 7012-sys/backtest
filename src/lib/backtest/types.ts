@@ -157,6 +157,7 @@ export const PRO_INDICATOR_VALUES = [
   'opening_range_high', 'opening_range_low',
   'day_high', 'day_low',
   'gap_up', 'gap_down',
+  'support_level', 'resistance_level',
   // Candlestick patterns
   'bullish_engulfing', 'bearish_engulfing', 'hammer',
   'shooting_star', 'morning_star', 'doji', 'inside_bar',
