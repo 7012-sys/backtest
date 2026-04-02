@@ -444,6 +444,68 @@ export function getDayLow(data: OHLCV[], index: number): number {
   return data[index].low;
 }
 
+// ─── Support & Resistance (Pivot-based) ──────────────────────────────────────
+
+/**
+ * Support Level — finds the most recent swing low (a candle whose low is lower
+ * than the low of the candles on both sides, looking back over `lookback` bars).
+ * Falls back to the lowest low of the lookback period if no pivot is found.
+ */
+export function calculateSupportLevel(data: OHLCV[], index: number, lookback = 20): number {
+  const start = Math.max(2, index - lookback);
+  let support = Infinity;
+  let found = false;
+
+  for (let i = index - 1; i >= start; i--) {
+    // A swing low: low[i] < low[i-1] AND low[i] < low[i+1]
+    if (i - 1 >= 0 && i + 1 <= index) {
+      if (data[i].low < data[i - 1].low && data[i].low < data[i + 1].low) {
+        if (data[i].low < data[index].close) {
+          support = Math.min(support, data[i].low);
+          found = true;
+        }
+      }
+    }
+  }
+
+  // Fallback: lowest low of lookback
+  if (!found) {
+    for (let i = start; i < index; i++) {
+      support = Math.min(support, data[i].low);
+    }
+  }
+  return support;
+}
+
+/**
+ * Resistance Level — finds the most recent swing high (a candle whose high is
+ * higher than the highs on both sides, looking back over `lookback` bars).
+ * Falls back to the highest high of the lookback period if no pivot is found.
+ */
+export function calculateResistanceLevel(data: OHLCV[], index: number, lookback = 20): number {
+  const start = Math.max(2, index - lookback);
+  let resistance = -Infinity;
+  let found = false;
+
+  for (let i = index - 1; i >= start; i--) {
+    if (i - 1 >= 0 && i + 1 <= index) {
+      if (data[i].high > data[i - 1].high && data[i].high > data[i + 1].high) {
+        if (data[i].high > data[index].close) {
+          resistance = Math.max(resistance, data[i].high);
+          found = true;
+        }
+      }
+    }
+  }
+
+  if (!found) {
+    for (let i = start; i < index; i++) {
+      resistance = Math.max(resistance, data[i].high);
+    }
+  }
+  return resistance;
+}
+
 // Gap Up / Gap Down detection (returns 1 or 0)
 export function detectGapUp(data: OHLCV[], index: number): number {
   if (index < 1) return 0;
@@ -624,6 +686,12 @@ export function getIndicatorValue(
       return detectGapUp(data, index);
     case 'gap_down':
       return detectGapDown(data, index);
+    
+    // ─── Support & Resistance Levels ─────────────────────────────────────
+    case 'support_level':
+      return calculateSupportLevel(data, index);
+    case 'resistance_level':
+      return calculateResistanceLevel(data, index);
     
     default:
       // Try dynamic breakout patterns: high_N, low_N, volume_sma_N

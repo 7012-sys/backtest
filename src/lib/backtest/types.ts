@@ -157,6 +157,7 @@ export const PRO_INDICATOR_VALUES = [
   'opening_range_high', 'opening_range_low',
   'day_high', 'day_low',
   'gap_up', 'gap_down',
+  'support_level', 'resistance_level',
   // Candlestick patterns
   'bullish_engulfing', 'bearish_engulfing', 'hammer',
   'shooting_star', 'morning_star', 'doji', 'inside_bar',
@@ -165,7 +166,7 @@ export const PRO_INDICATOR_VALUES = [
 // Coming Soon indicators (displayed in UI but not functional)
 export const COMING_SOON_INDICATORS = [
   'fibonacci_38', 'fibonacci_50', 'fibonacci_62',
-  'rsi_divergence', 'support_level', 'resistance_level',
+  'rsi_divergence',
   'relative_strength',
   'iron_condor', 'straddle', 'option_momentum',
 ];

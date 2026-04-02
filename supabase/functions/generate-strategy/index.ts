@@ -19,6 +19,7 @@ const PRICE_ACTION_INDICATORS = [
   "Prev Day High", "Prev Day Low",
   "Opening Range High", "Opening Range Low",
   "Day High", "Day Low",
+  "Support Level", "Resistance Level",
   "Inside Bar", "Bullish Engulfing", "Bearish Engulfing",
   "Hammer", "Shooting Star", "Doji",
   "High 20", "Low 20",
@@ -154,13 +155,26 @@ const PRICE_ACTION_TEMPLATES: Array<{ keywords: string[]; minMatch: number; stra
     minMatch: 1,
     strategy: {
       name: "Support & Resistance Bounce",
-      description: "Buy when price touches the 20-day low (support) and bounces up. Exit at resistance (20-day high).",
+      description: "Buy when price drops near a support level (recent swing low). Exit when price reaches resistance (recent swing high).",
       entryRules: [
-        { id: "r1", indicator: "Price", condition: "less_than", value: "Low 20", connector: "AND" },
-        { id: "r2", indicator: "Bullish Engulfing", condition: "equals", value: "1", connector: "AND" },
+        { id: "r1", indicator: "Price", condition: "crosses_below", value: "Support Level", connector: "AND" },
       ],
       exitRules: [
-        { id: "r3", indicator: "Price", condition: "greater_than", value: "High 20", connector: "OR" },
+        { id: "r2", indicator: "Price", condition: "crosses_above", value: "Resistance Level", connector: "OR" },
+      ],
+    },
+  },
+  {
+    keywords: ["breakout retest", "retest", "break and retest"],
+    minMatch: 1,
+    strategy: {
+      name: "Breakout Retest Strategy",
+      description: "Buy when price breaks above resistance, then retests the level and moves up. Exit at next resistance or stop loss.",
+      entryRules: [
+        { id: "r1", indicator: "Price", condition: "crosses_above", value: "Resistance Level", connector: "AND" },
+      ],
+      exitRules: [
+        { id: "r2", indicator: "Price", condition: "crosses_below", value: "Support Level", connector: "OR" },
       ],
     },
   },

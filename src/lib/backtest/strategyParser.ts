@@ -73,6 +73,11 @@ const AI_INDICATOR_MAP: Record<string, string> = {
   // Price Action - Gap
   'gap up': 'gap_up',
   'gap down': 'gap_down',
+  // Support & Resistance
+  'support': 'support_level',
+  'support level': 'support_level',
+  'resistance': 'resistance_level',
+  'resistance level': 'resistance_level',
 };
 
 export function normalizeAIRules(rules: any[]): StrategyRule[] {
