@@ -166,6 +166,6 @@ export const PRO_INDICATOR_VALUES = [
 export const COMING_SOON_INDICATORS = [
   'fibonacci_38', 'fibonacci_50', 'fibonacci_62',
   'rsi_divergence', 'support_level', 'resistance_level',
-  'relative_strength', 'gap_up', 'gap_down',
+  'relative_strength',
   'iron_condor', 'straddle', 'option_momentum',
 ];
