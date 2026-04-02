@@ -125,8 +125,6 @@ const comingSoonIndicators = [
   { value: "support_level", label: "Support Level", category: "coming_soon" },
   { value: "resistance_level", label: "Resistance Level", category: "coming_soon" },
   { value: "relative_strength", label: "Relative Strength (vs Index)", category: "coming_soon" },
-  { value: "gap_up", label: "Gap Up", category: "coming_soon" },
-  { value: "gap_down", label: "Gap Down", category: "coming_soon" },
   { value: "iron_condor", label: "Iron Condor (Options)", category: "coming_soon" },
   { value: "straddle", label: "Straddle (Options)", category: "coming_soon" },
 ];
