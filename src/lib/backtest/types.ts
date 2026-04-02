@@ -165,7 +165,7 @@ export const PRO_INDICATOR_VALUES = [
 // Coming Soon indicators (displayed in UI but not functional)
 export const COMING_SOON_INDICATORS = [
   'fibonacci_38', 'fibonacci_50', 'fibonacci_62',
-  'rsi_divergence', 'support_level', 'resistance_level',
+  'rsi_divergence',
   'relative_strength',
   'iron_condor', 'straddle', 'option_momentum',
 ];
