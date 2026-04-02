@@ -414,13 +414,47 @@ export function calculateBBWidth(data: OHLCV[], period: number, index: number): 
   return ((bb.upper - bb.lower) / bb.middle) * 100;
 }
 
-// Previous day high/low (for Opening Range Breakout approximation)
+// Previous day high/low
 export function getPrevDayHigh(data: OHLCV[], index: number): number {
   return index >= 1 ? data[index - 1].high : data[index].high;
 }
 
 export function getPrevDayLow(data: OHLCV[], index: number): number {
   return index >= 1 ? data[index - 1].low : data[index].low;
+}
+
+// Opening Range High/Low — uses first candle as the "opening range"
+// For daily data, this is the open/high/low of the current candle
+// For intraday, ideally this would be the first N-minute candle (approximated here)
+export function getOpeningRangeHigh(data: OHLCV[], index: number): number {
+  // Use the previous candle's high as opening range reference (first candle of session)
+  return index >= 1 ? data[index - 1].high : data[index].high;
+}
+
+export function getOpeningRangeLow(data: OHLCV[], index: number): number {
+  return index >= 1 ? data[index - 1].low : data[index].low;
+}
+
+// Day High/Low — running high/low of current candle
+export function getDayHigh(data: OHLCV[], index: number): number {
+  return data[index].high;
+}
+
+export function getDayLow(data: OHLCV[], index: number): number {
+  return data[index].low;
+}
+
+// Gap Up / Gap Down detection (returns 1 or 0)
+export function detectGapUp(data: OHLCV[], index: number): number {
+  if (index < 1) return 0;
+  // Gap up: current open > previous high
+  return data[index].open > data[index - 1].high ? 1 : 0;
+}
+
+export function detectGapDown(data: OHLCV[], index: number): number {
+  if (index < 1) return 0;
+  // Gap down: current open < previous low
+  return data[index].open < data[index - 1].low ? 1 : 0;
 }
 
 // Get indicator value by name
