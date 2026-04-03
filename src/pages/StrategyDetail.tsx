@@ -152,13 +152,6 @@ const StrategyDetail = () => {
               <BacktestHistory strategyId={strategy.id} />
             </TabsContent>
 
-            <TabsContent value="versions">
-              <VersionHistory strategyId={strategy.id} currentVersion={strategy.current_version} />
-            </TabsContent>
-
-            <TabsContent value="journal">
-              {user && <JournalTab strategyId={strategy.id} userId={user.id} />}
-            </TabsContent>
           </Tabs>
         </>
       )}
