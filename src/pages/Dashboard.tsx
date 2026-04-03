@@ -34,73 +34,15 @@ interface Subscription {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const { user, isPro: authPro, isLoading: authLoading, signOut, expiryDate: authExpiry } = useAuth();
 
   useEffect(() => {
-    const checkUserAccess = async (user: User) => {
-      if (!user.email_confirmed_at) {
-        navigate("/auth", { state: { showVerification: true, email: user.email } });
-        return false;
-      }
-      return true;
-    };
-
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        setTimeout(() => checkUserAccess(session.user), 0);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        checkUserAccess(session.user);
-      }
-    });
-
-    return () => authSub.unsubscribe();
-  }, [navigate]);
-
-  useEffect(() => {
-    if (user) {
-      fetchSubscription();
+    if (!authLoading && !user) {
+      navigate("/auth");
+    } else if (user && !user.email_confirmed_at) {
+      navigate("/auth", { state: { showVerification: true, email: user.email } });
     }
-  }, [user]);
-
-  const fetchSubscription = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("subscriptions")
-      .select("plan, status, current_period_end")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (data) {
-      // Auto-downgrade expired pro subscriptions
-      if (
-        data.plan !== "free" &&
-        data.current_period_end &&
-        new Date(data.current_period_end) < new Date()
-      ) {
-        await supabase
-          .from("subscriptions")
-          .update({ plan: "free", status: "expired" })
-          .eq("user_id", user.id);
-        setSubscription({ plan: "free", status: "expired", current_period_end: data.current_period_end });
-        toast.info("Your Pro plan has expired. You've been moved to the Free plan.");
-      } else {
-        setSubscription(data);
-      }
-    }
-  };
+  }, [user, authLoading, navigate]);
 
   const { strategies, backtests, isLoading: dataLoading } = useDashboardData(user?.id);
   const {
