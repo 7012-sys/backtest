@@ -12,8 +12,6 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { User } from "@supabase/supabase-js";
-import { VersionHistory } from "@/components/strategy/VersionHistory";
-import { JournalTab } from "@/components/strategy/JournalTab";
 import { BacktestHistory } from "@/components/strategy/BacktestHistory";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
