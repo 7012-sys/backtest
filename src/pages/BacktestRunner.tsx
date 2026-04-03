@@ -87,7 +87,10 @@ const getFreeStartDate = () => {
   return d.toISOString().split("T")[0];
 };
 
+import { getLastTradingDay } from "@/lib/tradingCalendar";
+
 const TODAY = new Date().toISOString().split("T")[0];
+const LAST_TRADING_DAY = getLastTradingDay();
 
 const TIMEFRAMES = [
   { value: "1m", label: "1 Minute" },
