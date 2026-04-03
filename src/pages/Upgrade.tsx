@@ -46,7 +46,7 @@ interface Subscription {
 const proFeatures = [
   { icon: Zap, title: "Unlimited Simulations", description: "Run as many historical simulations as you want, no monthly limits" },
   { icon: TrendingUp, title: "AI Strategy Generation", description: "Generate up to 30 strategies/day from plain English descriptions" },
-  { icon: BarChart3, title: "20+ Indian Stocks", description: "HDFCBANK, TATAMOTORS, ADANIENT, POWERGRID & more built-in" },
+  { icon: BarChart3, title: "25+ Indian Stocks", description: "HDFCBANK, TATAMOTORS, ADANIENT, POWERGRID & more built-in" },
   { icon: Shield, title: "Custom CSV Upload (50MB)", description: "Upload your own historical data for educational analysis" },
   { icon: LineChart, title: "Walk-Forward Validation", description: "Detect overfitting with rolling train/test windows" },
   { icon: Sparkles, title: "Custom Indicator Parameters", description: "Tune SMA, RSI, MACD periods to any value you want" },
