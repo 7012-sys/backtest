@@ -17,7 +17,7 @@ import {
   FlaskConical,
   Users,
 } from "lucide-react";
-import { User } from "@supabase/supabase-js";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
