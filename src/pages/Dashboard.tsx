@@ -26,11 +26,6 @@ import { StrategyList } from "@/components/dashboard/StrategyList";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface Subscription {
-  plan: string;
-  status: string;
-  current_period_end: string | null;
-}
 
 const Dashboard = () => {
   const navigate = useNavigate();
