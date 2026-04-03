@@ -100,8 +100,6 @@ const StrategyDetail = () => {
             <TabsList>
               <TabsTrigger value="overview" className="gap-1.5"><Layers className="h-3.5 w-3.5" /> Overview</TabsTrigger>
               <TabsTrigger value="backtests" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Backtests</TabsTrigger>
-              <TabsTrigger value="versions" className="gap-1.5"><GitBranch className="h-3.5 w-3.5" /> Versions</TabsTrigger>
-              <TabsTrigger value="journal" className="gap-1.5"><BookOpen className="h-3.5 w-3.5" /> Journal</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
