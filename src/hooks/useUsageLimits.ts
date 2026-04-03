@@ -65,10 +65,12 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
   const [monthlyBacktestsUsed, setMonthlyBacktestsUsed] = useState(0);
   const [totalBacktestsUsed, setTotalBacktestsUsed] = useState(0);
   const [aiStrategiesUsed, setAIStrategiesUsed] = useState(0);
+  const [aiDailyUsed, setAiDailyUsed] = useState(0);
   const [strategiesCount, setStrategiesCount] = useState(0);
   const [uploadedFilesCount, setUploadedFilesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isPro, setIsPro] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [expiryDate, setExpiryDate] = useState<Date | null>(null);
   const [isExpired, setIsExpired] = useState(false);
 
