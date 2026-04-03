@@ -34,6 +34,7 @@ interface Subscription {
   profile?: {
     display_name: string | null;
     phone: string | null;
+    email: string | null;
   };
 }
 
