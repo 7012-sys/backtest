@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Layers, GitBranch, BookOpen, Play, Sparkles, Clock, BarChart3, Trash2,
+  Layers, Play, Sparkles, Clock, BarChart3, Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { User } from "@supabase/supabase-js";
