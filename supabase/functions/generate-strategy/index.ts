@@ -47,6 +47,10 @@ const PRICE_ACTION_KEYWORDS = [
   "day high", "day low", "end of day", "momentum",
   "breakout level", "price breaks", "price touches",
   "first 15 min", "first 30 min", "first hour",
+  "reversal", "fake breakout", "range trading", "range bound",
+  "multi-timeframe", "multi timeframe", "time based", "time-based",
+  "market open", "market close", "session",
+  "risk reward", "risk-reward", "risk based", "risk-based",
 ];
 
 function isPriceActionPrompt(prompt: string): boolean {
