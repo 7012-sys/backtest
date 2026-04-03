@@ -44,7 +44,7 @@ const AIStrategyPage = () => {
   const [saving, setSaving] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
 
-  const { canUseAI, aiStrategiesUsed, aiStrategyLimit, isPro, expiryDate, refresh } = useUsageLimits(user?.id);
+  const { canUseAI, aiStrategiesUsed, aiStrategyLimit, aiDailyUsed, isPro, isAdmin, expiryDate, refresh } = useUsageLimits(user?.id);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
