@@ -107,8 +107,17 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
           setIsExpired(false);
         }
         
-        setExpiryDate(periodEnd);
+      setExpiryDate(periodEnd);
       }
+
+      // Check admin role
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      setIsAdmin(!!adminRole);
 
       // Fetch profile with usage counts
       const { data: profile, error: profileError } = await supabase
@@ -128,7 +137,6 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
         const needsReset = resetDate.getFullYear() !== now.getFullYear() || resetDate.getMonth() !== now.getMonth();
         
         if (needsReset) {
-          // Reset monthly counter
           await supabase
             .from("profiles")
             .update({ monthly_backtests_used: 0, monthly_reset_date: now.toISOString().split('T')[0] })
@@ -139,7 +147,7 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
         }
       }
 
-      // Fetch total AI strategies used
+      // Fetch total AI strategies used (all time)
       const { count: aiCount, error: aiError } = await supabase
         .from("strategies")
         .select("*", { count: "exact", head: true })
@@ -149,6 +157,16 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
       if (!aiError) {
         setAIStrategiesUsed(aiCount || 0);
       }
+
+      // Fetch today's AI usage count
+      const today = new Date().toISOString().split('T')[0];
+      const { data: aiUsage } = await supabase
+        .from("ai_usage")
+        .select("request_count")
+        .eq("user_id", userId)
+        .eq("usage_date", today)
+        .maybeSingle();
+      setAiDailyUsed(aiUsage?.request_count || 0);
     } catch (error) {
       console.error("Error fetching usage:", error);
     } finally {
