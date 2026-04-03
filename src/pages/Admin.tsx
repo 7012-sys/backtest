@@ -35,7 +35,7 @@ interface Subscription {
   current_period_end: string | null;
   created_at: string;
   razorpay_subscription_id: string | null;
-  profile?: { display_name: string | null; phone: string | null };
+  profile?: { display_name: string | null; phone: string | null; email: string | null };
 }
 
 interface UsageData {
