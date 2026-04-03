@@ -196,6 +196,10 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
     return FREE_STOCKS.includes(stock.toUpperCase());
   };
 
+  // Admin gets unlimited AI, Pro gets 30/day, Free gets 0
+  const aiLimit = isAdmin ? null : effectivePro ? PRO_AI_DAILY_LIMIT : FREE_AI_LIMIT;
+  const canUseAICheck = isAdmin ? true : effectivePro ? aiDailyUsed < PRO_AI_DAILY_LIMIT : false;
+
   return {
     // Backtest limits (monthly)
     monthlyBacktestsUsed,
@@ -204,8 +208,9 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
     
     // AI limits
     aiStrategiesUsed,
-    aiStrategyLimit: effectivePro ? null : FREE_AI_LIMIT,
-    canUseAI: effectivePro,
+    aiStrategyLimit: aiLimit,
+    canUseAI: canUseAICheck,
+    aiDailyUsed,
     
     // Strategy limits
     strategiesCount,
@@ -220,6 +225,7 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
     // Subscription info
     isLoading,
     isPro: effectivePro,
+    isAdmin,
     expiryDate,
     isExpired,
     
