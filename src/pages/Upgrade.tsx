@@ -378,7 +378,7 @@ const Upgrade = () => {
               <ComparisonRow feature="All 15+ Indicators" freeCheck proCheck />
               <ComparisonRow feature="Custom Indicator Parameters" freeCheck proCheck />
               <ComparisonRow feature="Strategy Versioning" freeCheck proCheck />
-              <ComparisonRow feature="AI Strategy Generation" freeCross pro="50/day" proHighlight />
+              <ComparisonRow feature="AI Strategy Generation" freeCross pro="30/day" proHighlight />
 
               {/* Backtesting Section */}
               <div className="bg-muted/30 px-4 py-2 border-b border-t">

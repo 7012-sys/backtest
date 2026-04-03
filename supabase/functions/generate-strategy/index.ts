@@ -439,7 +439,7 @@ serve(async (req) => {
         .maybeSingle();
 
       const isPro = subData?.plan === "pro" && subData?.status === "active";
-      const dailyLimit = isPro ? 50 : FREE_AI_DAILY_LIMIT;
+      const dailyLimit = isPro ? 30 : FREE_AI_DAILY_LIMIT;
 
       if (currentCount >= dailyLimit) {
         return new Response(
