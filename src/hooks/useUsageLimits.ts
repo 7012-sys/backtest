@@ -6,6 +6,7 @@ const FREE_BACKTEST_LIMIT = 30; // 30 backtests for free
 const FREE_STRATEGY_LIMIT = 2; // 2 manual strategies
 const FREE_FILE_LIMIT = 0; // CSV upload disabled for free
 const FREE_AI_LIMIT = 0; // AI disabled for free
+const PRO_AI_DAILY_LIMIT = 30; // 30 AI strategies/day for Pro
 
 // FREE preloaded stocks only — only NIFTY50 for free
 export const FREE_STOCKS = ["NIFTY50"];
