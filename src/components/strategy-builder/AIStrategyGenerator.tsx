@@ -71,9 +71,12 @@ export const AIStrategyGenerator = ({ onGenerate }: AIStrategyGeneratorProps) =>
   const examplePrompts = [
     "Opening Range Breakout - buy when price breaks first 15 min high",
     "Previous Day High/Low breakout strategy",
-    "Buy when RSI is oversold and price crosses above 20-day SMA",
     "Inside candle breakout strategy",
-    "Golden cross strategy with volume confirmation",
+    "Bullish engulfing pattern at support",
+    "Liquidity grab reversal strategy",
+    "Range trading - buy at support sell at resistance",
+    "RSI oversold bounce with SMA confirmation",
+    "MACD crossover strategy",
   ];
 
   return (
