@@ -387,7 +387,7 @@ const Upgrade = () => {
                 </span>
               </div>
               <ComparisonRow feature="Monthly Backtests" free="30 / month" pro="Unlimited" proHighlight />
-              <ComparisonRow feature="Market Data" free="NIFTY50 only" pro="20+ Indian Stocks" proHighlight />
+              <ComparisonRow feature="Market Data" free="NIFTY50 only" pro="25+ Indian Stocks" proHighlight />
               <ComparisonRow feature="Custom CSV Upload" freeCross proCheck />
               <ComparisonRow feature="Timeframes" free="Daily only" pro="All (1m–1M)" proHighlight />
               <ComparisonRow feature="Walk-Forward Validation" freeCross proCheck />

@@ -124,7 +124,7 @@ const Dashboard = () => {
     : null;
 
   return (
-    <AppLayout loading={loading} onSignOut={handleSignOut}>
+    <AppLayout loading={authLoading} onSignOut={handleSignOut}>
       {/* Welcome + Plan Status */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-1">

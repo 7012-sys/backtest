@@ -26,7 +26,7 @@ const lockedFeatures = [
 
 const proFeatures = [
   "Unlimited Strategies",
-  "NIFTY50 + 20+ Indian Stocks",
+  "NIFTY50 + 25+ Indian Stocks",
   "Custom CSV Upload",
   "Unlimited Backtests",
   "All Timeframes (1m to 1M)",

@@ -184,9 +184,8 @@ const BacktestRunner = () => {
       if (!session?.user) navigate("/auth");
     });
     const today = new Date();
-    setEndDate(today.toISOString().split("T")[0]);
-    // Default start date will be set once usagePro is known
-    const threeYearsAgo = new Date(today);
+    setEndDate(LAST_TRADING_DAY);
+    const threeYearsAgo = new Date();
     threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
     setStartDate(threeYearsAgo.toISOString().split("T")[0]);
     return () => authSub.unsubscribe();
