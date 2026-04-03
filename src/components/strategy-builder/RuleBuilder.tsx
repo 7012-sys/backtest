@@ -124,8 +124,6 @@ const comingSoonIndicators = [
   { value: "fibonacci_50", label: "Fibonacci 50%", category: "coming_soon" },
   { value: "fibonacci_62", label: "Fibonacci 61.8%", category: "coming_soon" },
   { value: "rsi_divergence", label: "RSI Divergence", category: "coming_soon" },
-  { value: "support_level", label: "Support Level", category: "coming_soon" },
-  { value: "resistance_level", label: "Resistance Level", category: "coming_soon" },
   { value: "relative_strength", label: "Relative Strength (vs Index)", category: "coming_soon" },
   { value: "iron_condor", label: "Iron Condor (Options)", category: "coming_soon" },
   { value: "straddle", label: "Straddle (Options)", category: "coming_soon" },

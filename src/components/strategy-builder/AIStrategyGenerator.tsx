@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,8 +19,12 @@ interface AIStrategyGeneratorProps {
 export const AIStrategyGenerator = ({ onGenerate }: AIStrategyGeneratorProps) => {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const lastCallRef = useRef<number>(0);
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastCallRef.current < 2000) return; // 2s debounce
+    lastCallRef.current = now;
     if (!prompt.trim()) {
       toast.error("Please describe your trading strategy idea");
       return;
@@ -62,14 +66,17 @@ export const AIStrategyGenerator = ({ onGenerate }: AIStrategyGeneratorProps) =>
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [prompt, onGenerate]);
 
   const examplePrompts = [
     "Opening Range Breakout - buy when price breaks first 15 min high",
     "Previous Day High/Low breakout strategy",
-    "Buy when RSI is oversold and price crosses above 20-day SMA",
     "Inside candle breakout strategy",
-    "Golden cross strategy with volume confirmation",
+    "Bullish engulfing pattern at support",
+    "Liquidity grab reversal strategy",
+    "Range trading - buy at support sell at resistance",
+    "RSI oversold bounce with SMA confirmation",
+    "MACD crossover strategy",
   ];
 
   return (
