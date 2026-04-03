@@ -66,7 +66,16 @@ const AIStrategyPage = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleGenerate = async () => {
+  const lastGenerateRef = useRef<number>(0);
+
+  const handleGenerate = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastGenerateRef.current < 3000) {
+      toast.info("Please wait a moment before generating again");
+      return;
+    }
+    lastGenerateRef.current = now;
+
     if (!prompt.trim()) {
       toast.error("Please describe your trading strategy idea");
       return;
@@ -99,13 +108,21 @@ const AIStrategyPage = () => {
       });
 
       toast.success("Strategy generated! Review the rules below.");
+      await refresh();
     } catch (error: any) {
       console.error("Generation error:", error);
-      toast.error(error.message || "Failed to generate strategy");
+      const msg = error.message || "";
+      if (msg.includes("rate limit") || msg.includes("429") || msg.includes("busy")) {
+        toast.error("AI is busy, try again in a few seconds");
+      } else if (msg.includes("Daily AI")) {
+        toast.error(msg);
+      } else {
+        toast.error(msg || "Failed to generate strategy. Please try again.");
+      }
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [prompt, canUseAI, refresh]);
 
   const handleSave = async () => {
     if (!user || !generatedStrategy) return;
