@@ -114,7 +114,7 @@ const Dashboard = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut({ scope: 'local' });
+    await signOut();
     navigate("/auth");
   };
 
