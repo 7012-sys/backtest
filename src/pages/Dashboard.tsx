@@ -18,13 +18,13 @@ import {
   Users,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { AppLayout } from "@/components/layout/AppLayout";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { UsageProgressBar } from "@/components/dashboard/UsageProgressBar";
 import { StrategyList } from "@/components/dashboard/StrategyList";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Subscription {
   plan: string;
