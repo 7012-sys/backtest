@@ -127,25 +127,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let mounted = true;
 
     const init = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!mounted) return;
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchSubscriptionData(session.user.id);
-        }
-      } catch (err) {
-        console.error("Auth init error:", err);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchSubscriptionData(session.user.id);
       }
       if (mounted) setIsLoading(false);
     };
 
-    // Timeout safety: never stay loading forever
-    const timeout = setTimeout(() => {
-      if (mounted) setIsLoading(false);
-    }, 5000);
-
-    init().finally(() => clearTimeout(timeout));
+    init();
 
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
