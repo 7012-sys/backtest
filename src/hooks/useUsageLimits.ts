@@ -29,6 +29,7 @@ interface UsageLimits {
   aiStrategiesUsed: number;
   aiStrategyLimit: number | null;
   canUseAI: boolean;
+  aiDailyUsed: number;
   
   // Strategy limits
   strategiesCount: number;
@@ -43,6 +44,7 @@ interface UsageLimits {
   // Subscription info
   isLoading: boolean;
   isPro: boolean;
+  isAdmin: boolean;
   expiryDate: Date | null;
   isExpired: boolean;
   
