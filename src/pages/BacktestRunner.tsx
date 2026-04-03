@@ -56,13 +56,29 @@ const ALL_DATASETS = [
   { value: "BANKNIFTY", label: "BANK NIFTY", availableFrom: "2010-01-01", isFree: false },
   { value: "RELIANCE", label: "RELIANCE", availableFrom: "2010-01-01", isFree: false },
   { value: "TCS", label: "TCS", availableFrom: "2010-01-01", isFree: false },
-  { value: "ITC", label: "ITC", availableFrom: "2010-01-01", isFree: false },
-  { value: "HDFCBANK", label: "HDFC BANK", availableFrom: "2010-01-01", isFree: false },
-  { value: "TATAMOTORS", label: "TATA MOTORS", availableFrom: "2010-01-01", isFree: false },
-  { value: "ADANIENT", label: "ADANI ENT", availableFrom: "2013-01-01", isFree: false },
-  { value: "POWERGRID", label: "POWER GRID", availableFrom: "2010-01-01", isFree: false },
   { value: "INFY", label: "INFOSYS", availableFrom: "2010-01-01", isFree: false },
+  { value: "HDFCBANK", label: "HDFC BANK", availableFrom: "2010-01-01", isFree: false },
+  { value: "ICICIBANK", label: "ICICI BANK", availableFrom: "2010-01-01", isFree: false },
   { value: "SBIN", label: "SBI", availableFrom: "2010-01-01", isFree: false },
+  { value: "ITC", label: "ITC", availableFrom: "2010-01-01", isFree: false },
+  { value: "TATAMOTORS", label: "TATA MOTORS", availableFrom: "2010-01-01", isFree: false },
+  { value: "KOTAKBANK", label: "KOTAK BANK", availableFrom: "2010-01-01", isFree: false },
+  { value: "AXISBANK", label: "AXIS BANK", availableFrom: "2010-01-01", isFree: false },
+  { value: "BAJFINANCE", label: "BAJAJ FINANCE", availableFrom: "2010-01-01", isFree: false },
+  { value: "LT", label: "L&T", availableFrom: "2010-01-01", isFree: false },
+  { value: "BHARTIARTL", label: "BHARTI AIRTEL", availableFrom: "2010-01-01", isFree: false },
+  { value: "ADANIENT", label: "ADANI ENT", availableFrom: "2013-01-01", isFree: false },
+  { value: "WIPRO", label: "WIPRO", availableFrom: "2010-01-01", isFree: false },
+  { value: "ASIANPAINT", label: "ASIAN PAINTS", availableFrom: "2010-01-01", isFree: false },
+  { value: "MARUTI", label: "MARUTI SUZUKI", availableFrom: "2010-01-01", isFree: false },
+  { value: "TITAN", label: "TITAN", availableFrom: "2010-01-01", isFree: false },
+  { value: "SUNPHARMA", label: "SUN PHARMA", availableFrom: "2010-01-01", isFree: false },
+  { value: "HINDUNILVR", label: "HINDUSTAN UNILEVER", availableFrom: "2010-01-01", isFree: false },
+  { value: "NESTLEIND", label: "NESTLE INDIA", availableFrom: "2010-01-01", isFree: false },
+  { value: "ULTRACEMCO", label: "ULTRATECH CEMENT", availableFrom: "2010-01-01", isFree: false },
+  { value: "POWERGRID", label: "POWER GRID", availableFrom: "2010-01-01", isFree: false },
+  { value: "NIFTYIT", label: "NIFTY IT", availableFrom: "2010-01-01", isFree: false },
+  { value: "NIFTYMIDCAP", label: "NIFTY MIDCAP 100", availableFrom: "2010-01-01", isFree: false },
 ];
 
 const getFreeStartDate = () => {
@@ -71,7 +87,10 @@ const getFreeStartDate = () => {
   return d.toISOString().split("T")[0];
 };
 
+import { getLastTradingDay } from "@/lib/tradingCalendar";
+
 const TODAY = new Date().toISOString().split("T")[0];
+const LAST_TRADING_DAY = getLastTradingDay();
 
 const TIMEFRAMES = [
   { value: "1m", label: "1 Minute" },
@@ -165,9 +184,8 @@ const BacktestRunner = () => {
       if (!session?.user) navigate("/auth");
     });
     const today = new Date();
-    setEndDate(today.toISOString().split("T")[0]);
-    // Default start date will be set once usagePro is known
-    const threeYearsAgo = new Date(today);
+    setEndDate(LAST_TRADING_DAY);
+    const threeYearsAgo = new Date();
     threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
     setStartDate(threeYearsAgo.toISOString().split("T")[0]);
     return () => authSub.unsubscribe();

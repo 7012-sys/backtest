@@ -1,11 +1,9 @@
 import { useNavigate, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Settings, LogOut, ArrowLeft, Crown } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AppHeaderProps {
   showBack?: boolean;
@@ -25,14 +23,7 @@ export const AppHeader = ({
   rightContent
 }: AppHeaderProps) => {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState<string | undefined>();
-  const { isPro, isLoading, isExpired } = useSubscription(userId);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id);
-    });
-  }, []);
+  const { user, isPro, isAdmin, isLoading, isExpired } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -63,9 +54,7 @@ export const AppHeader = ({
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Theme Toggle */}
           <ThemeToggle />
-          
           
           {/* Pro Badge - active Pro users */}
           {!isLoading && isPro && !isExpired && (
@@ -76,7 +65,7 @@ export const AppHeader = ({
           )}
           
           {/* Upgrade to Pro - free users & expired Pro */}
-          {!isLoading && (!isPro || isExpired) && userId && (
+          {!isLoading && (!isPro || isExpired) && user && (
             <Button
               size="sm"
               onClick={() => navigate("/upgrade")}

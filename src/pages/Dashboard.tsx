@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,14 +10,13 @@ import {
   Sparkles,
   ChevronRight,
   Crown,
-  ArrowRight,
+  
   TrendingUp,
   Shield,
   Layers,
   FlaskConical,
   Users,
 } from "lucide-react";
-import { User } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
@@ -25,82 +24,20 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { UsageProgressBar } from "@/components/dashboard/UsageProgressBar";
 import { StrategyList } from "@/components/dashboard/StrategyList";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface Subscription {
-  plan: string;
-  status: string;
-  current_period_end: string | null;
-}
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const { user, isPro: authPro, isLoading: authLoading, signOut, expiryDate: authExpiry } = useAuth();
 
   useEffect(() => {
-    const checkUserAccess = async (user: User) => {
-      if (!user.email_confirmed_at) {
-        navigate("/auth", { state: { showVerification: true, email: user.email } });
-        return false;
-      }
-      return true;
-    };
-
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        setTimeout(() => checkUserAccess(session.user), 0);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        checkUserAccess(session.user);
-      }
-    });
-
-    return () => authSub.unsubscribe();
-  }, [navigate]);
-
-  useEffect(() => {
-    if (user) {
-      fetchSubscription();
+    if (!authLoading && !user) {
+      navigate("/auth");
+    } else if (user && !user.email_confirmed_at) {
+      navigate("/auth", { state: { showVerification: true, email: user.email } });
     }
-  }, [user]);
-
-  const fetchSubscription = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("subscriptions")
-      .select("plan, status, current_period_end")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (data) {
-      // Auto-downgrade expired pro subscriptions
-      if (
-        data.plan !== "free" &&
-        data.current_period_end &&
-        new Date(data.current_period_end) < new Date()
-      ) {
-        await supabase
-          .from("subscriptions")
-          .update({ plan: "free", status: "expired" })
-          .eq("user_id", user.id);
-        setSubscription({ plan: "free", status: "expired", current_period_end: data.current_period_end });
-        toast.info("Your Pro plan has expired. You've been moved to the Free plan.");
-      } else {
-        setSubscription(data);
-      }
-    }
-  };
+  }, [user, authLoading, navigate]);
 
   const { strategies, backtests, isLoading: dataLoading } = useDashboardData(user?.id);
   const {
@@ -172,7 +109,7 @@ const Dashboard = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut({ scope: 'local' });
+    await signOut();
     navigate("/auth");
   };
 
@@ -182,7 +119,7 @@ const Dashboard = () => {
     : null;
 
   return (
-    <AppLayout loading={loading} onSignOut={handleSignOut}>
+    <AppLayout loading={authLoading} onSignOut={handleSignOut}>
       {/* Welcome + Plan Status */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-1">
