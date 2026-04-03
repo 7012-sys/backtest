@@ -17,7 +17,7 @@ const freeFeatures = [
 const lockedFeatures = [
   "AI Strategy Generation",
   "Custom CSV Upload",
-  "20+ Indian Stock Symbols",
+  "25+ Indian Stock Symbols",
   "Monthly Returns Chart",
   "Trade-by-Trade Log",
   "Walk-Forward Validation",
