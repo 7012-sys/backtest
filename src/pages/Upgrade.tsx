@@ -45,7 +45,7 @@ interface Subscription {
 
 const proFeatures = [
   { icon: Zap, title: "Unlimited Simulations", description: "Run as many historical simulations as you want, no monthly limits" },
-  { icon: TrendingUp, title: "AI Strategy Generation", description: "Generate up to 50 strategies/day from plain English descriptions" },
+  { icon: TrendingUp, title: "AI Strategy Generation", description: "Generate up to 30 strategies/day from plain English descriptions" },
   { icon: BarChart3, title: "20+ Indian Stocks", description: "HDFCBANK, TATAMOTORS, ADANIENT, POWERGRID & more built-in" },
   { icon: Shield, title: "Custom CSV Upload (50MB)", description: "Upload your own historical data for educational analysis" },
   { icon: LineChart, title: "Walk-Forward Validation", description: "Detect overfitting with rolling train/test windows" },
@@ -378,7 +378,7 @@ const Upgrade = () => {
               <ComparisonRow feature="All 15+ Indicators" freeCheck proCheck />
               <ComparisonRow feature="Custom Indicator Parameters" freeCheck proCheck />
               <ComparisonRow feature="Strategy Versioning" freeCheck proCheck />
-              <ComparisonRow feature="AI Strategy Generation" freeCross pro="50/day" proHighlight />
+              <ComparisonRow feature="AI Strategy Generation" freeCross pro="30/day" proHighlight />
 
               {/* Backtesting Section */}
               <div className="bg-muted/30 px-4 py-2 border-b border-t">

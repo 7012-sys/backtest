@@ -31,7 +31,7 @@ const proFeatures = [
   "Unlimited Backtests",
   "All Timeframes (1m to 1M)",
   "Custom Indicator Parameters",
-  "AI Strategy Generation (50/day)",
+  "AI Strategy Generation (30/day)",
   "Community Strategy Sharing",
   "Like & Upvote Strategies",
   "Full Analytics Dashboard",
