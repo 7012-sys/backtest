@@ -84,7 +84,7 @@ const StrategyDetail = () => {
       {strategy && (
         <>
           {/* Strategy Meta */}
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex flex-wrap items-center gap-2 mb-6">
             <Badge variant="outline" className="text-xs">V{strategy.current_version}</Badge>
             {strategy.is_ai_generated && (
               <Badge variant="outline" className="text-xs bg-accent/10 text-accent border-accent/30">
