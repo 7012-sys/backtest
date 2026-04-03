@@ -19,8 +19,12 @@ interface AIStrategyGeneratorProps {
 export const AIStrategyGenerator = ({ onGenerate }: AIStrategyGeneratorProps) => {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const lastCallRef = useRef<number>(0);
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastCallRef.current < 2000) return; // 2s debounce
+    lastCallRef.current = now;
     if (!prompt.trim()) {
       toast.error("Please describe your trading strategy idea");
       return;
