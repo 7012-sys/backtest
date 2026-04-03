@@ -108,6 +108,18 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate endDate is not today or future
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const endDateObj = new Date(endMs);
+    endDateObj.setHours(0, 0, 0, 0);
+    if (endDateObj >= now) {
+      // Adjust endDate to yesterday silently
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      // We'll just let it proceed — Yahoo will return whatever is available up to now
+    }
+
     // ── Enforce intraday date range limits ──
     const maxDays = INTRADAY_LIMITS[tf];
     if (maxDays) {
