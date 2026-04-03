@@ -44,7 +44,7 @@ const AIStrategyPage = () => {
   const [saving, setSaving] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
 
-  const { canUseAI, aiStrategiesUsed, aiStrategyLimit, isPro, expiryDate, refresh } = useUsageLimits(user?.id);
+  const { canUseAI, aiStrategiesUsed, aiStrategyLimit, aiDailyUsed, isPro, isAdmin, expiryDate, refresh } = useUsageLimits(user?.id);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -177,9 +177,14 @@ const AIStrategyPage = () => {
               <div className="flex items-center gap-2">
                 <Sparkles className={`h-4 w-4 ${!canUseAI ? 'text-warning' : isPro ? 'text-success' : 'text-accent'}`} />
                 <span className="text-sm">
-                  {isPro ? (
+                  {isAdmin ? (
                     <>
-                      <strong className="text-success">Pro Plan</strong> — Unlimited AI Strategies
+                      <strong className="text-success">Admin</strong> — Unlimited AI Strategies
+                      <span className="text-muted-foreground ml-2">· Today: {aiDailyUsed} used</span>
+                    </>
+                  ) : isPro ? (
+                    <>
+                      <strong className="text-success">Pro Plan</strong> — AI Strategies Today: <strong>{aiDailyUsed}/{aiStrategyLimit}</strong>
                       {expiryDate && (
                         <span className="text-muted-foreground ml-2">
                           · Valid until {expiryDate.toLocaleDateString()}
@@ -188,15 +193,15 @@ const AIStrategyPage = () => {
                     </>
                   ) : (
                     <>
-                      AI Strategies Used: <strong>{aiStrategiesUsed}/{aiStrategyLimit}</strong>
+                      AI Strategies: <strong>Pro Only</strong>
                     </>
                   )}
                 </span>
               </div>
-              {!canUseAI && !isPro && (
+              {!canUseAI && (
                 <div className="flex items-center gap-2 text-warning text-xs">
                   <AlertCircle className="h-3 w-3" />
-                  Limit reached — Upgrade to Pro for unlimited
+                  {isPro ? 'Daily limit reached (30/day)' : 'Upgrade to Pro'}
                 </div>
               )}
             </div>

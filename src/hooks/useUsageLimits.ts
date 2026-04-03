@@ -6,6 +6,7 @@ const FREE_BACKTEST_LIMIT = 30; // 30 backtests for free
 const FREE_STRATEGY_LIMIT = 2; // 2 manual strategies
 const FREE_FILE_LIMIT = 0; // CSV upload disabled for free
 const FREE_AI_LIMIT = 0; // AI disabled for free
+const PRO_AI_DAILY_LIMIT = 30; // 30 AI strategies/day for Pro
 
 // FREE preloaded stocks only — only NIFTY50 for free
 export const FREE_STOCKS = ["NIFTY50"];
@@ -28,6 +29,7 @@ interface UsageLimits {
   aiStrategiesUsed: number;
   aiStrategyLimit: number | null;
   canUseAI: boolean;
+  aiDailyUsed: number;
   
   // Strategy limits
   strategiesCount: number;
@@ -42,6 +44,7 @@ interface UsageLimits {
   // Subscription info
   isLoading: boolean;
   isPro: boolean;
+  isAdmin: boolean;
   expiryDate: Date | null;
   isExpired: boolean;
   
@@ -62,10 +65,12 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
   const [monthlyBacktestsUsed, setMonthlyBacktestsUsed] = useState(0);
   const [totalBacktestsUsed, setTotalBacktestsUsed] = useState(0);
   const [aiStrategiesUsed, setAIStrategiesUsed] = useState(0);
+  const [aiDailyUsed, setAiDailyUsed] = useState(0);
   const [strategiesCount, setStrategiesCount] = useState(0);
   const [uploadedFilesCount, setUploadedFilesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isPro, setIsPro] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [expiryDate, setExpiryDate] = useState<Date | null>(null);
   const [isExpired, setIsExpired] = useState(false);
 
@@ -102,8 +107,17 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
           setIsExpired(false);
         }
         
-        setExpiryDate(periodEnd);
+      setExpiryDate(periodEnd);
       }
+
+      // Check admin role
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      setIsAdmin(!!adminRole);
 
       // Fetch profile with usage counts
       const { data: profile, error: profileError } = await supabase
@@ -123,7 +137,6 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
         const needsReset = resetDate.getFullYear() !== now.getFullYear() || resetDate.getMonth() !== now.getMonth();
         
         if (needsReset) {
-          // Reset monthly counter
           await supabase
             .from("profiles")
             .update({ monthly_backtests_used: 0, monthly_reset_date: now.toISOString().split('T')[0] })
@@ -134,7 +147,7 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
         }
       }
 
-      // Fetch total AI strategies used
+      // Fetch total AI strategies used (all time)
       const { count: aiCount, error: aiError } = await supabase
         .from("strategies")
         .select("*", { count: "exact", head: true })
@@ -144,6 +157,16 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
       if (!aiError) {
         setAIStrategiesUsed(aiCount || 0);
       }
+
+      // Fetch today's AI usage count
+      const today = new Date().toISOString().split('T')[0];
+      const { data: aiUsage } = await supabase
+        .from("ai_usage")
+        .select("request_count")
+        .eq("user_id", userId)
+        .eq("usage_date", today)
+        .maybeSingle();
+      setAiDailyUsed(aiUsage?.request_count || 0);
     } catch (error) {
       console.error("Error fetching usage:", error);
     } finally {
@@ -173,6 +196,10 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
     return FREE_STOCKS.includes(stock.toUpperCase());
   };
 
+  // Admin gets unlimited AI, Pro gets 30/day, Free gets 0
+  const aiLimit = isAdmin ? null : effectivePro ? PRO_AI_DAILY_LIMIT : FREE_AI_LIMIT;
+  const canUseAICheck = isAdmin ? true : effectivePro ? aiDailyUsed < PRO_AI_DAILY_LIMIT : false;
+
   return {
     // Backtest limits (monthly)
     monthlyBacktestsUsed,
@@ -181,8 +208,9 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
     
     // AI limits
     aiStrategiesUsed,
-    aiStrategyLimit: effectivePro ? null : FREE_AI_LIMIT,
-    canUseAI: effectivePro,
+    aiStrategyLimit: aiLimit,
+    canUseAI: canUseAICheck,
+    aiDailyUsed,
     
     // Strategy limits
     strategiesCount,
@@ -197,6 +225,7 @@ export const useUsageLimits = (userId: string | undefined): UsageLimits => {
     // Subscription info
     isLoading,
     isPro: effectivePro,
+    isAdmin,
     expiryDate,
     isExpired,
     
