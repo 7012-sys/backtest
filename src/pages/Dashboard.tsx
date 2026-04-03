@@ -10,7 +10,7 @@ import {
   Sparkles,
   ChevronRight,
   Crown,
-  ArrowRight,
+  
   TrendingUp,
   Shield,
   Layers,
