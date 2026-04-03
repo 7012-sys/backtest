@@ -1,121 +1,108 @@
 
 
-# Application Refinement Plan
+## Plan: Fix Production Issues — Pro State Flicker, Mobile Dropdowns, Trading Calendar, Stock Count
 
-## 1. Remove Onboarding
+### Summary
 
-**What changes:**
-- Remove the onboarding redirect check from `src/pages/Dashboard.tsx` (the `checkUserAccess` function currently redirects to `/onboarding` if `onboarding_completed` is false)
-- Remove the `/onboarding` route from `src/App.tsx`
-- After login, users land directly on the dashboard
-- The `Onboarding.tsx` page file will remain but be unreachable (no route)
-
-**Files to modify:**
-- `src/pages/Dashboard.tsx` -- Remove the onboarding check logic
-- `src/App.tsx` -- Remove the `/onboarding` route
+Four distinct issues to fix: (1) Pro users see Free UI flash on login/navigation, (2) mobile dropdown scroll bugs, (3) invalid trading dates shown, (4) stock count mismatch between marketing and app.
 
 ---
 
-## 2. Watch Demo (Public Page)
+### Issue 1: Pro User State Delay & Flicker
 
-**What changes:**
-- Create a new public page at `/demo` (`src/pages/Demo.tsx`)
-- Update the "Watch Demo" button in `src/components/landing/HeroSection.tsx` to navigate to `/demo`
-- Add the `/demo` route to `src/App.tsx`
+**Root cause**: Every page independently fetches subscription status via `useUsageLimits` or `useSubscription`, causing a loading period where `isPro=false` renders Free UI.
 
-**Demo page sections:**
-1. What is TradeTest? -- Overview explanation
-2. How to Create Manual Strategy -- Step-by-step with SMA 50/200 crossover example, using existing UI card components to simulate screenshots
-3. How to Create AI Strategy -- Example input "Buy when RSI below 30 and price above 200 SMA", show how AI converts to rules
-4. How to Run Backtest -- Select dataset, configure capital, add commission, click run
-5. Backtest Results Demo -- Simulated equity curve, monthly returns grid, trade list preview, key metrics cards, confidence score, walk-forward preview
+**Fix**:
 
-The page will use existing UI components (Card, Badge, etc.) to create realistic-looking mock screenshots. No login required.
+1. **Create `AuthProvider` context** (`src/contexts/AuthContext.tsx`)
+   - Wrap the app in `<AuthProvider>` in `App.tsx`
+   - On mount: fetch session, subscription, and admin role in parallel
+   - Expose `{ user, isPro, isAdmin, isLoading, subscription, expiryDate, signOut }` via context
+   - Cache subscription in `sessionStorage` — use cached value as initial state for instant render, then validate in background
+   - Listen to `onAuthStateChange` to keep state in sync
 
-**Files to create:**
-- `src/pages/Demo.tsx`
+2. **Add blocking full-screen loader**
+   - In `AppLayout`, if auth context `isLoading` is true, show full-screen branded loader (already exists — just connect to context)
+   - No Pro/Free UI renders until status is resolved
 
-**Files to modify:**
-- `src/components/landing/HeroSection.tsx` -- Wire "Watch Demo" button to `/demo`
-- `src/App.tsx` -- Add `/demo` route
+3. **Refactor consumers**
+   - `Dashboard.tsx`: use context instead of local auth + subscription fetching
+   - `AppHeader.tsx`: use context instead of `useSubscription`
+   - `useUsageLimits`: accept pre-resolved `isPro`/`isAdmin` from context to skip redundant subscription queries
+   - Other pages already using `useUsageLimits` will benefit automatically
 
----
-
-## 3. Premium Expiry Display + Auto Downgrade
-
-**What changes:**
-- Dashboard already shows expiry date. Will ensure it uses the real `current_period_end` from the subscription table.
-- Add an auto-downgrade check: when the dashboard loads, if the subscription has expired (`current_period_end < now()`), automatically update the subscription to `plan: 'free'` and `status: 'active'` in the database.
-- This ensures expired premium users are immediately downgraded without manual intervention.
-
-**Files to modify:**
-- `src/pages/Dashboard.tsx` -- Add expiry check logic in `fetchSubscription` that auto-downgrades expired subscriptions
+**Result**: Single fetch on login, cached across navigation, no flicker.
 
 ---
 
-## 4. Data Library Page Fixes
+### Issue 2: Mobile Dropdown UX Bug
 
-**What changes:**
-- Remove the duplicate `<ThemeToggle />` from the `AppHeader` rightContent prop in `DataLibrary.tsx`
-- Use `AppLayout` component (which already includes AppHeader with back navigation) instead of manually rendering `AppHeader` + `AppFooter`
+**Root cause**: Radix Select on mobile can trigger scroll-to-top due to focus management and body scroll lock conflicts.
 
-**Files to modify:**
-- `src/pages/DataLibrary.tsx` -- Switch to `AppLayout` with `showBack`, `backTo="/dashboard"`, remove standalone `ThemeToggle`
+**Fix**:
 
----
+1. **Update `SelectContent`** in `src/components/ui/select.tsx`:
+   - Add `onCloseAutoFocus={(e) => e.preventDefault()}` to prevent scroll jump on close
+   - Add `position="popper"` with `sideOffset={4}` for stable anchoring
+   - Increase touch target: add `min-h-[44px]` to `SelectItem` for mobile tap friendliness
 
-## 5. Remove Column Validation UI
-
-**What changes:**
-- In `CSVUploader.tsx`: Remove the manual column mapping UI (the grid of Date/Open/High/Low/Close/Volume dropdowns and "Validate & Load Data" button). Instead, after file selection, automatically detect columns and validate+load immediately. If required columns are missing, show an error message.
-- In `DataLibrary.tsx`: Same approach -- remove the column mapping grid from the upload form. Auto-detect and save directly after file selection.
-
-**Files to modify:**
-- `src/components/backtest/CSVUploader.tsx` -- Auto-validate on file upload, remove column mapping UI
-- `src/pages/DataLibrary.tsx` -- Remove column mapping UI from upload form, auto-detect and save
+2. **Add global CSS** to prevent body scroll lock issues:
+   ```css
+   [data-radix-select-viewport] { -webkit-overflow-scrolling: touch; }
+   ```
 
 ---
 
-## 6. Date Range Auto-Fill (CSV Upload Bug)
+### Issue 3: Invalid Trading Data & Date Selection
 
-**What changes:**
-- Currently, `CSVUploader` only calls `onDateRangeDetected` after the user clicks "Validate & Load Data". With the column mapping UI removed (item 5), auto-validation will happen immediately on file upload, which will automatically detect and set the date range.
-- This fix is inherently resolved by item 5's changes.
+**Fix**:
 
----
+1. **Create utility** `src/lib/tradingCalendar.ts`:
+   - `isTradingDay(date)`: returns false for weekends + Indian market holidays (NSE holiday list for 2024-2026)
+   - `isDateSelectable(date)`: returns false for non-trading days AND today (incomplete data)
+   - `getLastTradingDay()`: returns the most recent completed trading day
 
-## 7. 6-Month Range Error Fix
+2. **Update `BacktestRunner.tsx`**:
+   - Default end date = `getLastTradingDay()` instead of `TODAY`
+   - Add `min`/`max` attributes on date inputs
+   - Add validation before running backtest: if selected dates include non-trading days, show warning
+   - Disable today's date in the date picker
 
-**What changes:**
-- In `BacktestRunner.tsx`, change the minimum data points check from 30 to a lower number (e.g., 5), and change the error message. If the strategy produces zero trades, show "No Trades Generated for Selected Date Range" instead of blocking execution.
-- The backtest engine already returns `totalTrades: 0` when no trades are generated -- the issue is the `priceData.length < 30` check blocking execution before the engine runs.
-
-**Files to modify:**
-- `src/pages/BacktestRunner.tsx` -- Lower the minimum data points threshold and improve error messaging
-
----
-
-## 8. Data Range Reset Bug
-
-**What changes:**
-- In `BacktestRunner.tsx`, when switching from CSV to preloaded dataset (or changing dataset), reset `startDate`/`endDate` to the new dataset's bounds and clear CSV-related state.
-- The existing `onClick` for the "Preloaded Dataset" button already clears CSV state but doesn't reset dates to the preloaded dataset's range. Will fix this.
-
-**Files to modify:**
-- `src/pages/BacktestRunner.tsx` -- Reset date range when switching data source mode or changing preloaded dataset
+3. **Add backend validation** in `fetch-market-data/index.ts`:
+   - Validate that `endDate` is not today or a future date
+   - Return clear error if date range is invalid
 
 ---
 
-## Technical Summary
+### Issue 4: Stock Count Mismatch
 
-| # | Change | Files |
-|---|--------|-------|
-| 1 | Remove onboarding | `Dashboard.tsx`, `App.tsx` |
-| 2 | Demo page | `Demo.tsx` (new), `HeroSection.tsx`, `App.tsx` |
-| 3 | Auto-downgrade | `Dashboard.tsx` |
-| 4 | Data Library layout fix | `DataLibrary.tsx` |
-| 5 | Remove column mapping UI | `CSVUploader.tsx`, `DataLibrary.tsx` |
-| 6 | Date auto-fill | Resolved by #5 |
-| 7 | 6-month range fix | `BacktestRunner.tsx` |
-| 8 | Date range reset | `BacktestRunner.tsx` |
+**Root cause**: Backend `SYMBOL_MAP` has 27 symbols, but frontend `ALL_DATASETS` in `BacktestRunner.tsx` only lists 11.
+
+**Fix**:
+
+1. **Expand `ALL_DATASETS`** in `BacktestRunner.tsx` to include all 27 symbols from the backend:
+   - Add: NIFTYIT, NIFTYMIDCAP, ICICIBANK, HINDUNILVR, BHARTIARTL, KOTAKBANK, LT, AXISBANK, ASIANPAINT, MARUTI, TITAN, BAJFINANCE, WIPRO, ULTRACEMCO, NESTLEIND, SUNPHARMA
+
+2. **Update marketing copy** across:
+   - `PricingSection.tsx`: "25+ Indian Stock Symbols" (accurate)
+   - `Upgrade.tsx`: same update in features list and comparison table
+
+---
+
+### Files to Create
+- `src/contexts/AuthContext.tsx` — centralized auth + subscription context
+- `src/lib/tradingCalendar.ts` — trading day validation utility
+
+### Files to Modify
+- `src/App.tsx` — wrap with AuthProvider
+- `src/components/layout/AppLayout.tsx` — use auth context for loading
+- `src/components/layout/AppHeader.tsx` — use auth context
+- `src/pages/Dashboard.tsx` — use auth context, remove local subscription fetch
+- `src/hooks/useUsageLimits.ts` — skip redundant subscription fetch when context available
+- `src/components/ui/select.tsx` — mobile dropdown fixes
+- `src/pages/BacktestRunner.tsx` — expand stock list, add date validation
+- `src/components/landing/PricingSection.tsx` — update stock count
+- `src/pages/Upgrade.tsx` — update stock count
+- `supabase/functions/fetch-market-data/index.ts` — add date validation
+- `src/index.css` — mobile touch scrolling fix
 
