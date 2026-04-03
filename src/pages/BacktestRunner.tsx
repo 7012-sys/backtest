@@ -356,7 +356,7 @@ const BacktestRunner = () => {
           console.warn('Real data fetch failed, using simulated data:', fetchErr.message);
           priceData = generatePriceData(symbol, startDate, endDate, timeframe);
           setUsedFallbackData(true);
-          toast.warning('Could not fetch real market data. Using simulated data as fallback.', { duration: 5000 });
+          toast.warning('Data temporarily unavailable. Using simulated data as fallback.', { duration: 5000 });
         }
       }
       if (priceData.length < 5) throw new Error("Not enough data points. Please select a longer date range.");
