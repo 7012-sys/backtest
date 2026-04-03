@@ -8,10 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Layers, Play, Sparkles, Clock, BarChart3, Trash2,
+  Layers, GitBranch, BookOpen, Play, Sparkles, Clock, BarChart3, Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { User } from "@supabase/supabase-js";
+import { VersionHistory } from "@/components/strategy/VersionHistory";
+import { JournalTab } from "@/components/strategy/JournalTab";
 import { BacktestHistory } from "@/components/strategy/BacktestHistory";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
@@ -84,7 +86,7 @@ const StrategyDetail = () => {
       {strategy && (
         <>
           {/* Strategy Meta */}
-          <div className="flex flex-wrap items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-6">
             <Badge variant="outline" className="text-xs">V{strategy.current_version}</Badge>
             {strategy.is_ai_generated && (
               <Badge variant="outline" className="text-xs bg-accent/10 text-accent border-accent/30">
@@ -100,6 +102,8 @@ const StrategyDetail = () => {
             <TabsList>
               <TabsTrigger value="overview" className="gap-1.5"><Layers className="h-3.5 w-3.5" /> Overview</TabsTrigger>
               <TabsTrigger value="backtests" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Backtests</TabsTrigger>
+              <TabsTrigger value="versions" className="gap-1.5"><GitBranch className="h-3.5 w-3.5" /> Versions</TabsTrigger>
+              <TabsTrigger value="journal" className="gap-1.5"><BookOpen className="h-3.5 w-3.5" /> Journal</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -152,6 +156,13 @@ const StrategyDetail = () => {
               <BacktestHistory strategyId={strategy.id} />
             </TabsContent>
 
+            <TabsContent value="versions">
+              <VersionHistory strategyId={strategy.id} currentVersion={strategy.current_version} />
+            </TabsContent>
+
+            <TabsContent value="journal">
+              {user && <JournalTab strategyId={strategy.id} userId={user.id} />}
+            </TabsContent>
           </Tabs>
         </>
       )}

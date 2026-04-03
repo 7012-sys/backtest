@@ -27,15 +27,12 @@ export function calculateConfidenceScore(
 
   // 3. Consistency Score (0-25): Low variance in trade returns
   let consistencyScore = 0;
-  if (trades.length >= 2) {
-    const returns = trades.map(t => t.pnlPercent ?? 0);
+  if (trades.length >= 5) {
+    const returns = trades.map(t => t.pnlPercent);
     const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
     const variance = returns.reduce((s, r) => s + Math.pow(r - mean, 2), 0) / returns.length;
-    const stdDev = Math.sqrt(variance);
-    const cv = mean !== 0 ? stdDev / Math.abs(mean) : (stdDev > 0 ? 10 : 0);
+    const cv = mean !== 0 ? Math.sqrt(variance) / Math.abs(mean) : 10;
     consistencyScore = Math.min(25, Math.round(Math.max(0, (1 - cv / 5)) * 25));
-  } else if (trades.length === 1) {
-    consistencyScore = 5; // Minimal score for single trade
   }
 
   // 4. Drawdown Recovery (0-15): How well equity recovers
