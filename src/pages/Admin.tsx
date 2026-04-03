@@ -85,7 +85,7 @@ const Admin = () => {
 
   const fetchSubscriptions = async () => {
     const { data: subs } = await supabase.from("subscriptions").select("*").order("created_at", { ascending: false });
-    const { data: profiles } = await supabase.from("profiles").select("user_id, display_name, phone");
+    const { data: profiles } = await supabase.from("profiles").select("user_id, display_name, phone, email");
     setSubscriptions(subs?.map((sub) => ({ ...sub, profile: profiles?.find((p) => p.user_id === sub.user_id) })) || []);
   };
 

@@ -163,7 +163,7 @@ export const SubscriptionsTable = ({ subscriptions, loading, onUpdate }: Subscri
             subscriptions.map((sub) => (
               <TableRow key={sub.id}>
                 <TableCell className="font-medium">
-                  {sub.profile?.display_name || "No name"}
+                  {sub.profile?.display_name || sub.profile?.email || "No name"}
                 </TableCell>
                 <TableCell>
                   <Select
