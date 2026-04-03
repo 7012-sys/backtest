@@ -66,7 +66,7 @@ export const AIStrategyGenerator = ({ onGenerate }: AIStrategyGeneratorProps) =>
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [prompt, onGenerate]);
 
   const examplePrompts = [
     "Opening Range Breakout - buy when price breaks first 15 min high",
