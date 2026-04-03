@@ -282,7 +282,16 @@ const BacktestRunner = () => {
   // Intraday date range limits
   const INTRADAY_LIMITS: Record<string, number> = { '1m': 7, '5m': 60, '15m': 60 };
 
+  const lastRunRef = useRef<number>(0);
+
   const runBacktestHandler = async () => {
+    const now = Date.now();
+    if (now - lastRunRef.current < 3000) {
+      toast.info("Please wait before running another backtest");
+      return;
+    }
+    lastRunRef.current = now;
+
     if (!user || !selectedStrategy) { toast.error("Please select a strategy"); return; }
     if (!canRunBacktest) { setLimitModalType("backtest"); setShowLimitModal(true); return; }
     if (!isTimeframeAllowed(timeframe)) { setLimitModalType("timeframe"); setShowLimitModal(true); return; }
