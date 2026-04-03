@@ -211,6 +211,65 @@ const PRICE_ACTION_TEMPLATES: Array<{ keywords: string[]; minMatch: number; stra
       ],
     },
   },
+  {
+    keywords: ["reversal", "mean reversion", "overbought", "oversold"],
+    minMatch: 1,
+    strategy: {
+      name: "Price Action Reversal",
+      description: "Buy when price drops to support and forms a hammer. Exit at resistance or previous high.",
+      entryRules: [
+        { id: "r1", indicator: "Hammer", condition: "equals", value: "1", connector: "AND" },
+        { id: "r2", indicator: "Price", condition: "crosses_below", value: "Support Level", connector: "AND" },
+      ],
+      exitRules: [
+        { id: "r3", indicator: "Price", condition: "crosses_above", value: "Resistance Level", connector: "OR" },
+      ],
+    },
+  },
+  {
+    keywords: ["range trading", "range bound", "channel", "sideways range"],
+    minMatch: 1,
+    strategy: {
+      name: "Range Trading Strategy",
+      description: "Buy at range low (support), sell at range high (resistance). Works in sideways markets.",
+      entryRules: [
+        { id: "r1", indicator: "Price", condition: "crosses_below", value: "Support Level", connector: "AND" },
+        { id: "r2", indicator: "Bullish Engulfing", condition: "equals", value: "1", connector: "AND" },
+      ],
+      exitRules: [
+        { id: "r3", indicator: "Price", condition: "crosses_above", value: "Resistance Level", connector: "OR" },
+      ],
+    },
+  },
+  {
+    keywords: ["momentum", "strong move", "trend following"],
+    minMatch: 1,
+    strategy: {
+      name: "Momentum Breakout",
+      description: "Buy when price breaks above 20-day high with momentum. Exit when price falls below previous day low.",
+      entryRules: [
+        { id: "r1", indicator: "Price", condition: "crosses_above", value: "High 20", connector: "AND" },
+      ],
+      exitRules: [
+        { id: "r2", indicator: "Price", condition: "crosses_below", value: "Prev Day Low", connector: "OR" },
+      ],
+    },
+  },
+  {
+    keywords: ["engulfing", "bullish candle", "bearish candle"],
+    minMatch: 1,
+    strategy: {
+      name: "Engulfing Pattern Strategy",
+      description: "Buy on bullish engulfing pattern near support. Exit on bearish engulfing or at resistance.",
+      entryRules: [
+        { id: "r1", indicator: "Bullish Engulfing", condition: "equals", value: "1", connector: "AND" },
+      ],
+      exitRules: [
+        { id: "r2", indicator: "Bearish Engulfing", condition: "equals", value: "1", connector: "OR" },
+        { id: "r3", indicator: "Price", condition: "crosses_above", value: "Resistance Level", connector: "OR" },
+      ],
+    },
+  },
 ];
 
 // ── Technical Indicator Templates ──
