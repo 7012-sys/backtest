@@ -163,6 +163,9 @@ const Auth = () => {
           return;
         }
 
+        // Deterministic redirect on successful login
+        navigate("/dashboard", { replace: true });
+
         toast({
           title: "Welcome back!",
           description: "You have been signed in successfully.",
