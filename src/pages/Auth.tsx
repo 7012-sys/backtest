@@ -565,9 +565,12 @@ const Auth = () => {
                 variant="outline"
                 onClick={handleResendVerification}
                 className="w-full"
+                disabled={resendCooldown > 0}
               >
                 <Mail className="h-4 w-4 mr-2" />
-                Resend verification email
+                {resendCooldown > 0
+                  ? `Resend in ${resendCooldown}s`
+                  : "Resend verification email"}
               </Button>
             </div>
           </div>
