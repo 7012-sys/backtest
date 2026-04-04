@@ -26,6 +26,8 @@ serve(async (req) => {
       throw new Error("Razorpay Plan ID not configured. Please add RAZORPAY_PLAN_ID secret.");
     }
 
+    console.log(`RAZORPAY_PLAN_ID length: ${RAZORPAY_PLAN_ID.length}, prefix: ${RAZORPAY_PLAN_ID.substring(0, 5)}`);
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("No authorization header");
@@ -121,9 +123,10 @@ serve(async (req) => {
     });
 
     if (!subscriptionResponse.ok) {
-      const errorText = await subscriptionResponse.text();
-      console.error("Failed to create subscription:", errorText);
-      throw new Error("Failed to create subscription. Please check your Razorpay plan configuration.");
+      const errorData = await subscriptionResponse.json().catch(() => ({}));
+      console.error("Failed to create subscription:", JSON.stringify(errorData));
+      const razorpayMsg = errorData?.error?.description || "Unknown Razorpay error";
+      throw new Error(`Razorpay error: ${razorpayMsg}`);
     }
 
     const subscription = await subscriptionResponse.json();
