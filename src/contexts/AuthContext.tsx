@@ -127,13 +127,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let mounted = true;
 
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
-      setUser(session?.user ?? null);
-      if (session?.user) {
+      try {
+        // Add timeout to prevent hanging on stale tokens
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
+        const result = await Promise.race([sessionPromise, timeoutPromise]);
+        
+        if (!mounted) return;
+        
+        if (!result || 'error' in result === false) {
+          // Timeout or unexpected result
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: { session }, error } = result as Awaited<ReturnType<typeof supabase.auth.getSession>>;
+        if (error || !session) {
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        setUser(session.user);
         await fetchSubscriptionData(session.user.id);
+      } catch (err) {
+        console.error("Auth init error:", err);
+        if (mounted) setUser(null);
+      } finally {
+        if (mounted) setIsLoading(false);
       }
-      if (mounted) setIsLoading(false);
     };
 
     init();
@@ -143,7 +165,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!mounted) return;
         setUser(session?.user ?? null);
         if (session?.user) {
-          // Only refetch on sign-in or token refresh, not on every event
           if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
             await fetchSubscriptionData(session.user.id);
           }
