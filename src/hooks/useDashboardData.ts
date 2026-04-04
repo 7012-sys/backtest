@@ -46,6 +46,7 @@ export interface Backtest {
   losing_trades: number | null;
   max_drawdown: number | null;
   profit_factor: number | null;
+  confidence_score: number | null;
   created_at: string;
   strategy_id: string;
 }
