@@ -174,10 +174,6 @@
     box-shadow: 0 0 40px -10px hsl(152, 76%, 50%, 0.5);
   }
 
-  [data-radix-select-viewport] {
-    -webkit-overflow-scrolling: touch;
-  }
-
   .hero-gradient {
     background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(152, 76%, 50%, 0.15), transparent);
   }

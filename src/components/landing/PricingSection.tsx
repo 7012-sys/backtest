@@ -17,7 +17,7 @@ const freeFeatures = [
 const lockedFeatures = [
   "AI Strategy Generation",
   "Custom CSV Upload",
-  "25+ Indian Stock Symbols",
+  "20+ Indian Stock Symbols",
   "Monthly Returns Chart",
   "Trade-by-Trade Log",
   "Walk-Forward Validation",
@@ -26,7 +26,7 @@ const lockedFeatures = [
 
 const proFeatures = [
   "Unlimited Strategies",
-  "NIFTY50 + 25+ Indian Stocks",
+  "NIFTY50 + 20+ Indian Stocks",
   "Custom CSV Upload",
   "Unlimited Backtests",
   "All Timeframes (1m to 1M)",

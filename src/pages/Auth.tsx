@@ -69,17 +69,22 @@ const Auth = () => {
   }, [locationState]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!cancelled && session?.user && session.user.email_confirmed_at) {
-        navigate("/dashboard", { replace: true });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        // Check if email is confirmed
+        if (session.user.email_confirmed_at) {
+          navigate("/dashboard");
+        }
       }
-    }).catch(() => {
-      // Ignore — preview env may fail to fetch session
     });
 
-    return () => { cancelled = true; };
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && session.user.email_confirmed_at) {
+        navigate("/dashboard");
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const validateForm = () => {
@@ -120,7 +125,7 @@ const Auth = () => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`
+            emailRedirectTo: `${window.location.origin}/dashboard`
           }
         });
 
@@ -163,9 +168,6 @@ const Auth = () => {
           return;
         }
 
-        // Deterministic redirect on successful login
-        navigate("/dashboard", { replace: true });
-
         toast({
           title: "Welcome back!",
           description: "You have been signed in successfully.",
@@ -188,7 +190,7 @@ const Auth = () => {
         type: 'signup',
         email: signupEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          emailRedirectTo: `${window.location.origin}/dashboard`
         }
       });
 
