@@ -227,9 +227,13 @@ const Auth = () => {
         description: "A new verification link has been sent to your email.",
       });
     } catch (error: any) {
+      const msg = error.message?.toLowerCase?.() || "";
+      const isRateLimit = msg.includes("rate limit") || error.status === 429;
       toast({
         title: "Failed to resend",
-        description: error.message || "Please try again later.",
+        description: isRateLimit
+          ? "Too many attempts. Please wait a few minutes before trying again."
+          : (error.message || "Please try again later."),
         variant: "destructive",
       });
     }
