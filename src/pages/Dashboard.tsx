@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,6 @@ import {
   Sparkles,
   ChevronRight,
   Crown,
-  
   TrendingUp,
   Shield,
   Layers,
@@ -24,12 +23,23 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { UsageProgressBar } from "@/components/dashboard/UsageProgressBar";
 import { StrategyList } from "@/components/dashboard/StrategyList";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, isPro: authPro, isLoading: authLoading, signOut, expiryDate: authExpiry } = useAuth();
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -52,7 +62,7 @@ const Dashboard = () => {
     refresh,
   } = useUsageLimits(user?.id);
 
-  // Best return across all backtests — find the best one with details
+  // Best return across all backtests
   const bestBacktest = backtests.length > 0
     ? backtests.reduce((best, b) => {
         const returnPct = b.initial_capital > 0 && b.net_pnl !== null
@@ -83,7 +93,6 @@ const Dashboard = () => {
 
   const queryClient = useQueryClient();
 
-  // Immediate delete (no undo)
   const handleDeleteStrategy = async (strategyId: string, strategyName: string) => {
     const { error } = await supabase
       .from("strategies")
@@ -98,7 +107,6 @@ const Dashboard = () => {
 
     toast.success(`"${strategyName}" deleted`);
     queryClient.invalidateQueries({ queryKey: ["strategies", user?.id] });
-    // Update strategy count in profile
     if (user) {
       await supabase
         .from("profiles")
@@ -109,11 +117,10 @@ const Dashboard = () => {
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    await supabase.auth.signOut({ scope: "local" });
     navigate("/auth");
   };
 
-  // Find the strategy name for the best backtest
   const bestStrategy = bestBacktest
     ? strategies.find(s => s.id === bestBacktest.strategy_id)
     : null;
