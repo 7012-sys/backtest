@@ -3,6 +3,7 @@ import { AppHeader } from "./AppHeader";
 import { AppFooter } from "./AppFooter";
 import { FeedbackButton } from "@/components/feedback/FeedbackButton";
 import { TrendingUp } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -25,7 +26,9 @@ export const AppLayout = ({
   rightContent,
   loading = false
 }: AppLayoutProps) => {
-  if (loading) {
+  const { isLoading: authLoading } = useAuth();
+
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">

@@ -3,9 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Settings, LogOut, ArrowLeft, Crown } from "lucide-react";
-import { useSubscription } from "@/hooks/useSubscription";
-import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AppHeaderProps {
   showBack?: boolean;
@@ -25,19 +23,7 @@ export const AppHeader = ({
   rightContent
 }: AppHeaderProps) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const { isPro, isExpired, isLoading } = useSubscription(user?.id);
+  const { user, isPro, isAdmin, isLoading, isExpired } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
