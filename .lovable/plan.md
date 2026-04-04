@@ -1,108 +1,61 @@
 
+Problem identified:
+- The current “Failed to fetch” is coming from auth POST requests in the preview environment, not from your form validation. The logs show both `grant_type=password` and `grant_type=refresh_token` requests failing before auth can complete.
+- There is also a real auth-flow weakness in the app code: signup verification redirects to `/dashboard`, but there is no dedicated auth callback flow to reliably finalize email verification/OAuth before route guards run.
 
-## Plan: Fix Production Issues — Pro State Flicker, Mobile Dropdowns, Trading Calendar, Stock Count
+Plan:
+1. Separate preview limitation from real app auth
+- Treat preview auth POST failures as an environment issue and stop trying to “fix” them with CORS/fetch changes.
+- Make the published app the source of truth for auth verification.
 
-### Summary
+2. Fix the real auth flow in code
+- Update `src/pages/Auth.tsx` so email signup uses the correct verification redirect target instead of sending users straight to `/dashboard`.
+- Add a dedicated auth callback/finalization handler that reads auth tokens/codes from the URL, completes session setup, and then redirects to `/dashboard`.
+- Keep reset-password flow separate on `/reset-password`.
 
-Four distinct issues to fix: (1) Pro users see Free UI flash on login/navigation, (2) mobile dropdown scroll bugs, (3) invalid trading dates shown, (4) stock count mismatch between marketing and app.
+3. Make login redirect deterministic
+- After successful `signInWithPassword`, redirect confirmed users directly to `/dashboard` instead of depending only on `onAuthStateChange`.
+- Keep unverified users on the auth screen with the verification popup.
 
----
+4. Harden session restore and stale-token behavior
+- Refine `src/contexts/AuthContext.tsx` so failed session recovery on `/auth` does not keep retrying stale refresh behavior.
+- Clear invalid local auth state safely when restore fails, while keeping the current timeout protection.
+- Reduce duplicate auth checks between `Auth.tsx` and the global auth context.
 
-### Issue 1: Pro User State Delay & Flicker
+5. Verify backend auth settings
+- Confirm the authentication configuration allows the published domain and required redirect URLs for:
+  - sign in
+  - email verification
+  - password reset
+  - Google OAuth
+- This is required for production auth to work reliably after publish.
 
-**Root cause**: Every page independently fetches subscription status via `useUsageLimits` or `useSubscription`, causing a loading period where `isPro=false` renders Free UI.
+6. Files to update
+- `src/pages/Auth.tsx`
+- `src/contexts/AuthContext.tsx`
+- `src/App.tsx`
+- likely one new auth callback component/page, such as `src/components/auth/AuthCallbackHandler.tsx` or `src/pages/AuthCallback.tsx`
 
-**Fix**:
+7. QA checklist
+- Test on the published URL:
+  - existing user sign in
+  - new user sign up
+  - email verification redirect
+  - logout
+  - forgot password
+  - reset password
+  - Google sign in
+- Confirm successful sign-in lands on `/dashboard`.
+- Confirm preview may still show `Failed to fetch`, but published auth works correctly.
 
-1. **Create `AuthProvider` context** (`src/contexts/AuthContext.tsx`)
-   - Wrap the app in `<AuthProvider>` in `App.tsx`
-   - On mount: fetch session, subscription, and admin role in parallel
-   - Expose `{ user, isPro, isAdmin, isLoading, subscription, expiryDate, signOut }` via context
-   - Cache subscription in `sessionStorage` — use cached value as initial state for instant render, then validate in background
-   - Listen to `onAuthStateChange` to keep state in sync
+Technical note:
+- I reviewed the current code and found:
+  - `src/pages/Auth.tsx` still uses `emailRedirectTo: ${window.location.origin}/dashboard`
+  - there is no dedicated auth callback handler for verification/OAuth completion
+  - the auth page still relies on broad `onAuthStateChange` navigation
+  - logs show preview-origin auth requests failing before the backend responds
 
-2. **Add blocking full-screen loader**
-   - In `AppLayout`, if auth context `isLoading` is true, show full-screen branded loader (already exists — just connect to context)
-   - No Pro/Free UI renders until status is resolved
-
-3. **Refactor consumers**
-   - `Dashboard.tsx`: use context instead of local auth + subscription fetching
-   - `AppHeader.tsx`: use context instead of `useSubscription`
-   - `useUsageLimits`: accept pre-resolved `isPro`/`isAdmin` from context to skip redundant subscription queries
-   - Other pages already using `useUsageLimits` will benefit automatically
-
-**Result**: Single fetch on login, cached across navigation, no flicker.
-
----
-
-### Issue 2: Mobile Dropdown UX Bug
-
-**Root cause**: Radix Select on mobile can trigger scroll-to-top due to focus management and body scroll lock conflicts.
-
-**Fix**:
-
-1. **Update `SelectContent`** in `src/components/ui/select.tsx`:
-   - Add `onCloseAutoFocus={(e) => e.preventDefault()}` to prevent scroll jump on close
-   - Add `position="popper"` with `sideOffset={4}` for stable anchoring
-   - Increase touch target: add `min-h-[44px]` to `SelectItem` for mobile tap friendliness
-
-2. **Add global CSS** to prevent body scroll lock issues:
-   ```css
-   [data-radix-select-viewport] { -webkit-overflow-scrolling: touch; }
-   ```
-
----
-
-### Issue 3: Invalid Trading Data & Date Selection
-
-**Fix**:
-
-1. **Create utility** `src/lib/tradingCalendar.ts`:
-   - `isTradingDay(date)`: returns false for weekends + Indian market holidays (NSE holiday list for 2024-2026)
-   - `isDateSelectable(date)`: returns false for non-trading days AND today (incomplete data)
-   - `getLastTradingDay()`: returns the most recent completed trading day
-
-2. **Update `BacktestRunner.tsx`**:
-   - Default end date = `getLastTradingDay()` instead of `TODAY`
-   - Add `min`/`max` attributes on date inputs
-   - Add validation before running backtest: if selected dates include non-trading days, show warning
-   - Disable today's date in the date picker
-
-3. **Add backend validation** in `fetch-market-data/index.ts`:
-   - Validate that `endDate` is not today or a future date
-   - Return clear error if date range is invalid
-
----
-
-### Issue 4: Stock Count Mismatch
-
-**Root cause**: Backend `SYMBOL_MAP` has 27 symbols, but frontend `ALL_DATASETS` in `BacktestRunner.tsx` only lists 11.
-
-**Fix**:
-
-1. **Expand `ALL_DATASETS`** in `BacktestRunner.tsx` to include all 27 symbols from the backend:
-   - Add: NIFTYIT, NIFTYMIDCAP, ICICIBANK, HINDUNILVR, BHARTIARTL, KOTAKBANK, LT, AXISBANK, ASIANPAINT, MARUTI, TITAN, BAJFINANCE, WIPRO, ULTRACEMCO, NESTLEIND, SUNPHARMA
-
-2. **Update marketing copy** across:
-   - `PricingSection.tsx`: "25+ Indian Stock Symbols" (accurate)
-   - `Upgrade.tsx`: same update in features list and comparison table
-
----
-
-### Files to Create
-- `src/contexts/AuthContext.tsx` — centralized auth + subscription context
-- `src/lib/tradingCalendar.ts` — trading day validation utility
-
-### Files to Modify
-- `src/App.tsx` — wrap with AuthProvider
-- `src/components/layout/AppLayout.tsx` — use auth context for loading
-- `src/components/layout/AppHeader.tsx` — use auth context
-- `src/pages/Dashboard.tsx` — use auth context, remove local subscription fetch
-- `src/hooks/useUsageLimits.ts` — skip redundant subscription fetch when context available
-- `src/components/ui/select.tsx` — mobile dropdown fixes
-- `src/pages/BacktestRunner.tsx` — expand stock list, add date validation
-- `src/components/landing/PricingSection.tsx` — update stock count
-- `src/pages/Upgrade.tsx` — update stock count
-- `supabase/functions/fetch-market-data/index.ts` — add date validation
-- `src/index.css` — mobile touch scrolling fix
-
+This means the proper fix is:
+- correct the production auth flow in code
+- verify redirect settings for the published domain
+- avoid trying to patch the preview fetch proxy itself
