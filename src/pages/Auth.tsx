@@ -241,6 +241,7 @@ const Auth = () => {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (forgotPasswordLoading) return;
     
     try {
       emailSchema.parse(forgotPasswordEmail);
@@ -259,7 +260,12 @@ const Auth = () => {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.toLowerCase().includes("rate limit") || (error as any).status === 429) {
+          throw new Error("Too many attempts. Please wait a few minutes before trying again.");
+        }
+        throw error;
+      }
 
       setForgotPasswordSent(true);
       toast({
