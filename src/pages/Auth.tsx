@@ -188,7 +188,7 @@ const Auth = () => {
         type: 'signup',
         email: signupEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
