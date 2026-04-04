@@ -69,22 +69,17 @@ const Auth = () => {
   }, [locationState]);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        // Check if email is confirmed
-        if (session.user.email_confirmed_at) {
-          navigate("/dashboard");
-        }
-      }
-    });
+    let cancelled = false;
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && session.user.email_confirmed_at) {
-        navigate("/dashboard");
+      if (!cancelled && session?.user && session.user.email_confirmed_at) {
+        navigate("/dashboard", { replace: true });
       }
+    }).catch(() => {
+      // Ignore — preview env may fail to fetch session
     });
 
-    return () => subscription.unsubscribe();
+    return () => { cancelled = true; };
   }, [navigate]);
 
   const validateForm = () => {
