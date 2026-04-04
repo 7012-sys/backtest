@@ -120,6 +120,8 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+    if (submittingRef.current) return;
+    submittingRef.current = true;
 
     setLoading(true);
     try {
@@ -136,10 +138,12 @@ const Auth = () => {
           if (error.message.includes("already registered")) {
             throw new Error("This email is already registered. Please sign in instead.");
           }
+          if (error.message.toLowerCase().includes("rate limit") || error.status === 429) {
+            throw new Error("Too many attempts. Please wait a minute before trying again.");
+          }
           throw error;
         }
 
-        // Show verification popup
         setSignupEmail(email);
         setShowVerificationPopup(true);
         setEmail("");
@@ -160,10 +164,12 @@ const Auth = () => {
             setShowVerificationPopup(true);
             throw new Error("Please verify your email before signing in.");
           }
+          if (error.message.toLowerCase().includes("rate limit") || error.status === 429) {
+            throw new Error("Too many attempts. Please wait a minute before trying again.");
+          }
           throw error;
         }
 
-        // Check if email is verified
         if (data.user && !data.user.email_confirmed_at) {
           await supabase.auth.signOut();
           setSignupEmail(email);
@@ -184,10 +190,27 @@ const Auth = () => {
       });
     } finally {
       setLoading(false);
+      submittingRef.current = false;
     }
   };
 
+  const startResendCooldown = useCallback(() => {
+    setResendCooldown(30);
+    if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+    resendTimerRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
   const handleResendVerification = async () => {
+    if (resendCooldown > 0) return;
+    startResendCooldown();
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
