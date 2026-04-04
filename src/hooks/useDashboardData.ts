@@ -58,14 +58,16 @@ export const useDashboardData = (userId: string | undefined) => {
       if (!userId) return [];
       const { data, error } = await supabase
         .from("strategies")
-        .select("*")
+        .select("id, name, description, is_ai_generated, created_at, updated_at")
         .eq("user_id", userId)
-        .order("updated_at", { ascending: false });
+        .order("updated_at", { ascending: false })
+        .limit(50);
       
       if (error) throw error;
       return data as Strategy[];
     },
     enabled: !!userId,
+    staleTime: 30000,
   });
 
   // Fetch backtests
