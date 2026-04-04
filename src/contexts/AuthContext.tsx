@@ -144,13 +144,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     init();
 
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!mounted) return;
         setUser(session?.user ?? null);
         if (session?.user) {
-          // Only refetch on sign-in or token refresh, not on every event
           if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-            await fetchSubscriptionData(session.user.id);
+            // Fire-and-forget to avoid deadlock — never await supabase calls inside onAuthStateChange
+            fetchSubscriptionData(session.user.id).finally(() => {
+              if (mounted) setIsLoading(false);
+            });
+            return;
           }
         } else {
           setIsPro(false);
