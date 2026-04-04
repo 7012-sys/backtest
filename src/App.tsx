@@ -17,6 +17,7 @@ import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import Upgrade from "./pages/Upgrade";
 import ResetPassword from "./pages/ResetPassword";
+import AuthCallback from "./pages/AuthCallback";
 import UpgradeSuccess from "./pages/UpgradeSuccess";
 
 import StrategyComparison from "./pages/StrategyComparison";
@@ -42,6 +43,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/demo" element={<Demo />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/strategy-builder" element={<StrategyBuilder />} />
