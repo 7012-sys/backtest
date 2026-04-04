@@ -8,12 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Layers, GitBranch, BookOpen, Play, Sparkles, Clock, BarChart3, Trash2,
+  Layers, Play, Sparkles, Clock, BarChart3, Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { User } from "@supabase/supabase-js";
-import { VersionHistory } from "@/components/strategy/VersionHistory";
-import { JournalTab } from "@/components/strategy/JournalTab";
 import { BacktestHistory } from "@/components/strategy/BacktestHistory";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
@@ -72,11 +70,11 @@ const StrategyDetail = () => {
     <div className="flex items-center gap-2">
       {isPro && (
         <Button size="sm" variant="outline" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleDelete}>
-          <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+          <Trash2 className="h-3.5 w-3.5 mr-1" /> <span className="hidden sm:inline">Delete</span>
         </Button>
       )}
       <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => navigate(`/backtest?strategy=${strategy.id}`)}>
-        <Play className="h-3.5 w-3.5 mr-1" /> Backtest
+        <Play className="h-3.5 w-3.5 mr-1" /> <span className="hidden sm:inline">Backtest</span>
       </Button>
     </div>
   ) : null;
@@ -86,15 +84,15 @@ const StrategyDetail = () => {
       {strategy && (
         <>
           {/* Strategy Meta */}
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex flex-wrap items-center gap-2 mb-4 sm:mb-6">
             <Badge variant="outline" className="text-xs">V{strategy.current_version}</Badge>
             {strategy.is_ai_generated && (
               <Badge variant="outline" className="text-xs bg-accent/10 text-accent border-accent/30">
-                <Sparkles className="h-3 w-3 mr-1" />AI Generated
+                <Sparkles className="h-3 w-3 mr-1" />AI
               </Badge>
             )}
             <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Clock className="h-3 w-3" /> Updated {format(new Date(strategy.updated_at), "MMM d, yyyy")}
+              <Clock className="h-3 w-3" /> {format(new Date(strategy.updated_at), "MMM d, yyyy")}
             </span>
           </div>
 
@@ -102,21 +100,19 @@ const StrategyDetail = () => {
             <TabsList>
               <TabsTrigger value="overview" className="gap-1.5"><Layers className="h-3.5 w-3.5" /> Overview</TabsTrigger>
               <TabsTrigger value="backtests" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Backtests</TabsTrigger>
-              <TabsTrigger value="versions" className="gap-1.5"><GitBranch className="h-3.5 w-3.5" /> Versions</TabsTrigger>
-              <TabsTrigger value="journal" className="gap-1.5"><BookOpen className="h-3.5 w-3.5" /> Journal</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                 <Card>
-                  <CardHeader><CardTitle className="text-sm text-success">Entry Rules (Buy)</CardTitle></CardHeader>
+                  <CardHeader className="pb-2 sm:pb-4"><CardTitle className="text-sm text-success">Entry Rules (Buy)</CardTitle></CardHeader>
                   <CardContent>
                     {(rules?.entry ?? []).length === 0 ? (
                       <p className="text-xs text-muted-foreground">No entry rules defined</p>
                     ) : (
                       <ul className="space-y-2">
                         {(rules.entry as any[]).map((r: any, i: number) => (
-                          <li key={i} className="text-xs p-2 rounded bg-muted/50 border border-border">
+                          <li key={i} className="text-xs p-2 rounded bg-muted/50 border border-border break-words">
                             <span className="font-mono">{r.indicator}</span> {r.condition} <span className="font-semibold">{r.value}</span>
                             {r.logic && <Badge variant="outline" className="ml-2 text-xs">{r.logic}</Badge>}
                           </li>
@@ -126,14 +122,14 @@ const StrategyDetail = () => {
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardHeader><CardTitle className="text-sm text-destructive">Exit Rules (Sell)</CardTitle></CardHeader>
+                  <CardHeader className="pb-2 sm:pb-4"><CardTitle className="text-sm text-destructive">Exit Rules (Sell)</CardTitle></CardHeader>
                   <CardContent>
                     {(rules?.exit ?? []).length === 0 ? (
                       <p className="text-xs text-muted-foreground">No exit rules defined</p>
                     ) : (
                       <ul className="space-y-2">
                         {(rules.exit as any[]).map((r: any, i: number) => (
-                          <li key={i} className="text-xs p-2 rounded bg-muted/50 border border-border">
+                          <li key={i} className="text-xs p-2 rounded bg-muted/50 border border-border break-words">
                             <span className="font-mono">{r.indicator}</span> {r.condition} <span className="font-semibold">{r.value}</span>
                             {r.logic && <Badge variant="outline" className="ml-2 text-xs">{r.logic}</Badge>}
                           </li>
@@ -154,14 +150,6 @@ const StrategyDetail = () => {
 
             <TabsContent value="backtests">
               <BacktestHistory strategyId={strategy.id} />
-            </TabsContent>
-
-            <TabsContent value="versions">
-              <VersionHistory strategyId={strategy.id} currentVersion={strategy.current_version} />
-            </TabsContent>
-
-            <TabsContent value="journal">
-              {user && <JournalTab strategyId={strategy.id} userId={user.id} />}
             </TabsContent>
           </Tabs>
         </>
