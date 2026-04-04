@@ -26,6 +26,8 @@ serve(async (req) => {
       throw new Error("Razorpay Plan ID not configured. Please add RAZORPAY_PLAN_ID secret.");
     }
 
+    console.log(`RAZORPAY_PLAN_ID length: ${RAZORPAY_PLAN_ID.length}, prefix: ${RAZORPAY_PLAN_ID.substring(0, 5)}`);
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("No authorization header");
