@@ -17,6 +17,7 @@ import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import Upgrade from "./pages/Upgrade";
 import ResetPassword from "./pages/ResetPassword";
+import AuthCallback from "./pages/AuthCallback";
 import UpgradeSuccess from "./pages/UpgradeSuccess";
 
 import StrategyComparison from "./pages/StrategyComparison";
