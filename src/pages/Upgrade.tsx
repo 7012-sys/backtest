@@ -201,16 +201,20 @@ const Upgrade = () => {
           description: "Pro Plan - ₹499/month",
           handler: async function (response: any) {
             toast.success("Payment successful! Activating Pro plan...");
-            // Update subscription status - 30 days (1 month)
-            await supabase
-              .from("subscriptions")
-              .update({ 
-                plan: 'pro', 
-                status: 'active',
-                current_period_start: new Date().toISOString(),
-                current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-              })
-              .eq("user_id", user.id);
+            // Verify payment server-side and activate subscription securely
+            const { error: activateError } = await supabase.functions.invoke("activate-subscription", {
+              body: {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_subscription_id: response.razorpay_subscription_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+            });
+            
+            if (activateError) {
+              console.error("Activation error:", activateError);
+              toast.error("Payment received but activation failed. Please contact support.");
+              return;
+            }
             
             // Navigate to success page
             navigate("/upgrade/success");
