@@ -78,7 +78,7 @@ export const useDashboardData = (userId: string | undefined) => {
       if (!userId) return [];
       const { data, error } = await supabase
         .from("backtests")
-        .select("id, symbol, timeframe, start_date, end_date, initial_capital, net_pnl, win_rate, total_trades, winning_trades, losing_trades, max_drawdown, profit_factor, created_at, strategy_id")
+        .select("id, symbol, timeframe, start_date, end_date, initial_capital, net_pnl, win_rate, total_trades, winning_trades, losing_trades, max_drawdown, profit_factor, confidence_score, created_at, strategy_id")
         .eq("user_id", userId)
         .eq("is_deleted", false)
         .order("created_at", { ascending: false })
