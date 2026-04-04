@@ -128,15 +128,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const init = async () => {
       try {
-        // Add timeout to prevent hanging on stale tokens
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
         const result = await Promise.race([sessionPromise, timeoutPromise]);
         
         if (!mounted) return;
         
-        if (!result || 'error' in result === false) {
-          // Timeout or unexpected result
+        if (!result || !('data' in result)) {
+          // Timeout or unexpected result — clear stale tokens
+          try {
+            localStorage.removeItem('sb-gujttmyfrltbbwsdwnyc-auth-token');
+          } catch {}
           setUser(null);
           setIsLoading(false);
           return;
@@ -144,6 +146,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         const { data: { session }, error } = result as Awaited<ReturnType<typeof supabase.auth.getSession>>;
         if (error || !session) {
+          if (error) {
+            // Clear stale auth state on error
+            try {
+              localStorage.removeItem('sb-gujttmyfrltbbwsdwnyc-auth-token');
+            } catch {}
+          }
           setUser(null);
           setIsLoading(false);
           return;
@@ -152,7 +160,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await fetchSubscriptionData(session.user.id);
       } catch (err) {
         console.error("Auth init error:", err);
-        if (mounted) setUser(null);
+        if (mounted) {
+          try {
+            localStorage.removeItem('sb-gujttmyfrltbbwsdwnyc-auth-token');
+          } catch {}
+          setUser(null);
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -161,12 +174,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     init();
 
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!mounted) return;
         setUser(session?.user ?? null);
         if (session?.user) {
           if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-            await fetchSubscriptionData(session.user.id);
+            // Fire and forget — don't await to prevent blocking auth events
+            fetchSubscriptionData(session.user.id).catch(console.error);
           }
         } else {
           setIsPro(false);
