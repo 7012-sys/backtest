@@ -59,7 +59,7 @@ const Auth = () => {
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const submittingRef = useRef(false);
-  const resendTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const resendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handle redirect from dashboard for unverified users
   useEffect(() => {
