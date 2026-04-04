@@ -135,12 +135,12 @@ const Dashboard = () => {
   // Best confidence score
   const bestConfidenceBacktest = backtests.length > 0
     ? backtests.reduce((best, b) => {
-        const score = (b as any).confidence_score ?? 0;
-        const bestScore = best ? ((best as any).confidence_score ?? 0) : 0;
+        const score = b.confidence_score ?? 0;
+        const bestScore = best ? (best.confidence_score ?? 0) : 0;
         return score > bestScore ? b : best;
       }, backtests[0])
     : null;
-  const bestConfidence = bestConfidenceBacktest ? ((bestConfidenceBacktest as any).confidence_score ?? null) : null;
+  const bestConfidence = bestConfidenceBacktest ? (bestConfidenceBacktest.confidence_score ?? null) : null;
 
   const remainingRuns = backtestLimit !== null ? backtestLimit - monthlyBacktestsUsed : null;
 
