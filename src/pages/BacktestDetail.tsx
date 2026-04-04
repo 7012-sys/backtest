@@ -81,7 +81,7 @@ const BacktestDetail = () => {
 
     const { data, error: fetchError } = await supabase
       .from("backtests")
-      .select("*")
+      .select("id, symbol, timeframe, start_date, end_date, initial_capital, created_at, results, strategy_id")
       .eq("id", id)
       .single();
 

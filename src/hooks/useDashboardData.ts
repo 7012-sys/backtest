@@ -58,14 +58,16 @@ export const useDashboardData = (userId: string | undefined) => {
       if (!userId) return [];
       const { data, error } = await supabase
         .from("strategies")
-        .select("*")
+        .select("id, name, description, is_ai_generated, created_at, updated_at")
         .eq("user_id", userId)
-        .order("updated_at", { ascending: false });
+        .order("updated_at", { ascending: false })
+        .limit(50);
       
       if (error) throw error;
       return data as Strategy[];
     },
     enabled: !!userId,
+    staleTime: 30000,
   });
 
   // Fetch backtests
@@ -75,14 +77,17 @@ export const useDashboardData = (userId: string | undefined) => {
       if (!userId) return [];
       const { data, error } = await supabase
         .from("backtests")
-        .select("*")
+        .select("id, symbol, timeframe, start_date, end_date, initial_capital, net_pnl, win_rate, total_trades, winning_trades, losing_trades, max_drawdown, profit_factor, created_at, strategy_id")
         .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false })
+        .limit(100);
       
       if (error) throw error;
       return data as Backtest[];
     },
     enabled: !!userId,
+    staleTime: 30000,
   });
 
   // Calculate metrics

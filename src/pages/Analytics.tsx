@@ -69,7 +69,9 @@ const Analytics = () => {
         .from("backtests")
         .select("id, created_at, net_pnl, win_rate, total_trades, winning_trades, losing_trades, max_drawdown, profit_factor, symbol")
         .eq("user_id", userId)
-        .order("created_at", { ascending: true });
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: true })
+        .limit(200);
 
       if (!error && data) {
         setBacktests(data);
