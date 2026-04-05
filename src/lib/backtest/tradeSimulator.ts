@@ -76,7 +76,7 @@ export function closePosition(
 ): SimulationState {
   if (!state.position) return state;
   
-  const { entryIndex, entryPrice, quantity, side } = state.position;
+  const { entryIndex, entryPrice, quantity, side, entryCommission } = state.position;
   const slippage = config?.slippagePercent ? config.slippagePercent / 100 : 0;
   
   // Use specific exit price (from SL/TP) or fall back to candle close with slippage
@@ -92,8 +92,9 @@ export function closePosition(
     pnl = (entryPrice - exitPrice) * quantity;
   }
 
-  const commission = config?.commissionPercent ? (exitPrice * quantity * config.commissionPercent / 100) : 0;
-  pnl -= commission;
+  const exitCommission = config?.commissionPercent ? (exitPrice * quantity * config.commissionPercent / 100) : 0;
+  // Include BOTH entry and exit commissions in trade PnL so netPnl matches finalEquity
+  pnl -= (entryCommission + exitCommission);
   
   const pnlPercent = ((exitPrice - entryPrice) / entryPrice) * 100 * (side === 'long' ? 1 : -1);
   const holdingDays = Math.max(1, candleIndex - entryIndex);
