@@ -116,7 +116,9 @@ export function closePosition(
   // entryDate is set by the engine after calling this function
   newTrade.entryDate = `entry_index_${entryIndex}`;
 
-  const newEquity = state.equity + pnl;
+  // Entry commission was already deducted from equity on open, so add it back
+  // since it's now included in pnl. Net effect: equity += pricePnl - exitCommission
+  const newEquity = state.equity + pnl + entryCommission;
 
   if (typeof window !== 'undefined' && (window as any).__BACKTEST_DEBUG__) {
     console.log(`[BT] EXIT @ candle ${candleIndex} | exitPrice=${exitPrice.toFixed(2)} | pnl=${pnl.toFixed(2)} | equity=${newEquity.toFixed(2)} | holding=${holdingDays}d`);
