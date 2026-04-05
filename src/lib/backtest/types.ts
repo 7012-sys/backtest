@@ -82,6 +82,7 @@ export interface Position {
   entryPrice: number;
   quantity: number;
   side: 'long' | 'short';
+  entryCommission: number;
 }
 
 export interface BacktestConfig {
