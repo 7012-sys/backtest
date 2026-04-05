@@ -61,6 +61,7 @@ export function openPosition(
       entryPrice,
       quantity,
       side: 'long',
+      entryCommission: commission,
     },
   };
 }
