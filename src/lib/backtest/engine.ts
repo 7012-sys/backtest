@@ -38,6 +38,27 @@ const DEFAULT_CONFIG: BacktestConfig = {
   allowShorts: false,
 };
 
+// Validate and filter OHLCV data — remove invalid candles, sort by date ascending
+function sanitizePriceData(data: OHLCV[]): OHLCV[] {
+  const valid = data.filter(c =>
+    c &&
+    c.date &&
+    typeof c.open === 'number' && isFinite(c.open) && c.open > 0 &&
+    typeof c.high === 'number' && isFinite(c.high) && c.high > 0 &&
+    typeof c.low === 'number' && isFinite(c.low) && c.low > 0 &&
+    typeof c.close === 'number' && isFinite(c.close) && c.close > 0 &&
+    typeof c.volume === 'number' && isFinite(c.volume) &&
+    c.high >= c.low &&
+    c.high >= c.open && c.high >= c.close &&
+    c.low <= c.open && c.low <= c.close
+  );
+
+  // Sort by date ascending
+  valid.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  return valid;
+}
+
 // Main backtest function
 export function runBacktest(
   priceData: OHLCV[],
@@ -47,26 +68,32 @@ export function runBacktest(
   config: Partial<BacktestConfig> = {}
 ): BacktestResults {
   const fullConfig = { ...DEFAULT_CONFIG, ...config, initialCapital };
+  const cleanData = sanitizePriceData(priceData);
   
+  const isDebug = typeof window !== 'undefined' && (window as any).__BACKTEST_DEBUG__;
+  
+  if (isDebug) {
+    console.log(`[BT] Starting backtest: ${cleanData.length} candles, capital=${initialCapital}, config=`, fullConfig);
+    console.log(`[BT] Entry rules:`, entryRules);
+    console.log(`[BT] Exit rules:`, exitRules);
+  }
+
   let state = initializeSimulation(initialCapital);
   
   // Process each candle sequentially
-  for (let i = 0; i < priceData.length; i++) {
-    const candle = priceData[i];
-    
-    // Update equity curve
-    state = updateEquityCurve(state, candle, i + 1);
+  for (let i = 0; i < cleanData.length; i++) {
+    const candle = cleanData[i];
     
     if (!state.position) {
       // Look for entry signal
-      if (checkEntrySignal(priceData, i, entryRules)) {
+      if (checkEntrySignal(cleanData, i, entryRules)) {
         state = openPosition(state, candle, i, fullConfig);
       }
     } else {
       // Check exit: evaluate SL (via low) → TP (via high) → custom rules
       const holdingDays = i - state.position.entryIndex;
       const exitResult = checkExitSignal(
-        priceData, 
+        cleanData, 
         i, 
         exitRules, 
         state.position.entryPrice, 
@@ -79,14 +106,34 @@ export function runBacktest(
       );
       
       if (exitResult.shouldExit) {
-        // Pass the specific exit price from SL/TP calculation
-        state = closePosition(state, candle, priceData, fullConfig, exitResult.exitPrice);
+        state = closePosition(state, candle, i, fullConfig, exitResult.exitPrice);
+        // Fix entry date on the trade we just closed
+        const lastTrade = state.trades[state.trades.length - 1];
+        if (lastTrade && lastTrade.entryDate.startsWith('entry_index_')) {
+          const entryIdx = parseInt(lastTrade.entryDate.replace('entry_index_', ''), 10);
+          if (entryIdx >= 0 && entryIdx < cleanData.length) {
+            lastTrade.entryDate = cleanData[entryIdx].date.split('T')[0];
+          }
+        }
       }
     }
+
+    // Update equity curve AFTER trade execution so it reflects actual state
+    state = updateEquityCurve(state, candle, i + 1);
   }
   
   // Force close any open position at end of backtest
-  state = forceClosePosition(state, priceData, fullConfig);
+  state = forceClosePosition(state, cleanData, fullConfig);
+  // Fix entry date for force-closed trade
+  if (state.trades.length > 0) {
+    const lastTrade = state.trades[state.trades.length - 1];
+    if (lastTrade && lastTrade.entryDate.startsWith('entry_index_')) {
+      const entryIdx = parseInt(lastTrade.entryDate.replace('entry_index_', ''), 10);
+      if (entryIdx >= 0 && entryIdx < cleanData.length) {
+        lastTrade.entryDate = cleanData[entryIdx].date.split('T')[0];
+      }
+    }
+  }
   
   // Calculate performance metrics
   const metrics = calculateMetrics(
@@ -99,7 +146,11 @@ export function runBacktest(
   const monthlyReturns = calculateMonthlyReturns(state.equityCurve);
   const paramCount = entryRules.length + exitRules.length;
   const confidence = calculateConfidenceScore(state.trades, state.equityCurve, paramCount, initialCapital);
-  
+
+  if (isDebug) {
+    console.log(`[BT] Completed: ${state.trades.length} trades, finalEquity=${Math.round(state.equity)}, netPnl=${metrics.netPnl}`);
+  }
+
   return {
     ...metrics,
     sortinoRatio: metrics.sortinoRatio,
@@ -107,7 +158,7 @@ export function runBacktest(
     monthlyReturns,
     finalEquity: Math.round(state.equity),
     trades: state.trades,
-    priceData,
+    priceData: cleanData,
     skippedSignals: state.skippedSignals,
     confidenceScore: confidence.overall,
     confidenceBreakdown: confidence,

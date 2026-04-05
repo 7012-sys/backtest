@@ -27,7 +27,7 @@ export function initializeSimulation(initialCapital: number): SimulationState {
   };
 }
 
-// Open a new position — uses candle.high as entry for breakout (more realistic)
+// Open a new position — entry at candle close with slippage (signal confirmed at close)
 export function openPosition(
   state: SimulationState,
   candle: OHLCV,
@@ -36,7 +36,6 @@ export function openPosition(
 ): SimulationState {
   const positionSize = config.positionSizing || 0.95;
   const slippage = config.slippagePercent ? config.slippagePercent / 100 : 0;
-  // Entry at close with slippage (conservative — signal confirmed at candle close)
   const entryPrice = candle.close * (1 + slippage);
   let quantity = Math.floor((state.equity * positionSize) / entryPrice);
   
@@ -50,6 +49,10 @@ export function openPosition(
 
   const commission = config.commissionPercent ? (entryPrice * quantity * config.commissionPercent / 100) : 0;
   
+  if (typeof window !== 'undefined' && (window as any).__BACKTEST_DEBUG__) {
+    console.log(`[BT] ENTRY @ candle ${candleIndex} | price=${entryPrice.toFixed(2)} | qty=${quantity} | commission=${commission.toFixed(2)} | equity=${(state.equity - commission).toFixed(2)}`);
+  }
+
   return {
     ...state,
     equity: state.equity - commission,
@@ -66,7 +69,7 @@ export function openPosition(
 export function closePosition(
   state: SimulationState,
   candle: OHLCV,
-  priceData: OHLCV[],
+  candleIndex: number,
   config?: BacktestConfig,
   specificExitPrice?: number
 ): SimulationState {
@@ -80,6 +83,7 @@ export function closePosition(
     ? specificExitPrice * (1 - slippage)
     : candle.close * (1 - slippage);
   
+  // PnL = (Exit - Entry) × Quantity for long, reversed for short
   let pnl: number;
   if (side === 'long') {
     pnl = (exitPrice - entryPrice) * quantity;
@@ -91,27 +95,36 @@ export function closePosition(
   pnl -= commission;
   
   const pnlPercent = ((exitPrice - entryPrice) / entryPrice) * 100 * (side === 'long' ? 1 : -1);
-  const holdingDays = priceData.findIndex(c => c.date === candle.date) - entryIndex;
+  const holdingDays = Math.max(1, candleIndex - entryIndex);
   
   const newTrade: Trade = {
     id: `T${state.tradeId}`,
-    entryDate: priceData[entryIndex].date.split('T')[0],
+    entryDate: candle.date && state.position ? '' : '', // placeholder, set below
     entryPrice,
     exitDate: candle.date.split('T')[0],
     exitPrice,
     side,
     quantity,
-    pnl: Math.round(pnl),
+    pnl: Math.round(pnl * 100) / 100,
     pnlPercent: Math.round(pnlPercent * 100) / 100,
-    holdingDays: Math.max(1, holdingDays),
+    holdingDays,
   };
-  
-  state.trades.push(newTrade);
-  
+
+  // We need priceData to get entry date - pass it via a workaround
+  // entryDate is set by the engine after calling this function
+  newTrade.entryDate = `entry_index_${entryIndex}`;
+
+  const newEquity = state.equity + pnl;
+
+  if (typeof window !== 'undefined' && (window as any).__BACKTEST_DEBUG__) {
+    console.log(`[BT] EXIT @ candle ${candleIndex} | exitPrice=${exitPrice.toFixed(2)} | pnl=${pnl.toFixed(2)} | equity=${newEquity.toFixed(2)} | holding=${holdingDays}d`);
+  }
+
   return {
     ...state,
-    equity: state.equity + pnl,
+    equity: newEquity,
     position: null,
+    trades: [...state.trades, newTrade],
     tradeId: state.tradeId + 1,
   };
 }
@@ -134,14 +147,13 @@ export function updateEquityCurve(
   const drawdown = newPeakEquity - currentEquity;
   const newMaxDrawdown = Math.max(state.maxDrawdown, drawdown);
   
-  state.equityCurve.push({
-    day: dayNumber,
-    date: candle.date.split('T')[0],
-    equity: currentEquity,
-  });
-  
   return {
     ...state,
+    equityCurve: [...state.equityCurve, {
+      day: dayNumber,
+      date: candle.date.split('T')[0],
+      equity: currentEquity,
+    }],
     peakEquity: newPeakEquity,
     maxDrawdown: newMaxDrawdown,
   };
@@ -154,7 +166,8 @@ export function forceClosePosition(
 ): SimulationState {
   if (!state.position || priceData.length === 0) return state;
   const lastCandle = priceData[priceData.length - 1];
-  return closePosition(state, lastCandle, priceData, config);
+  const lastIndex = priceData.length - 1;
+  return closePosition(state, lastCandle, lastIndex, config);
 }
 
 export function calculatePositionSize(
