@@ -126,7 +126,7 @@ const Upgrade = () => {
     const { data: affiliate } = await supabase
       .from("affiliates")
       .select("id, status")
-      .eq("referral_code", code)
+      .ilike("referral_code", code)
       .eq("status", "active")
       .maybeSingle();
 
