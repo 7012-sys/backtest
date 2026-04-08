@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_settings: {
+        Row: {
+          attribution_window_days: number
+          commission_percent: number
+          discount_percent: number
+          id: string
+          is_enabled: boolean
+          min_withdrawal: number
+          updated_at: string
+        }
+        Insert: {
+          attribution_window_days?: number
+          commission_percent?: number
+          discount_percent?: number
+          id?: string
+          is_enabled?: boolean
+          min_withdrawal?: number
+          updated_at?: string
+        }
+        Update: {
+          attribution_window_days?: number
+          commission_percent?: number
+          discount_percent?: number
+          id?: string
+          is_enabled?: boolean
+          min_withdrawal?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      affiliates: {
+        Row: {
+          code_edited: boolean
+          created_at: string
+          id: string
+          payment_bank_account: string | null
+          payment_bank_ifsc: string | null
+          payment_bank_name: string | null
+          payment_upi: string | null
+          pending_earnings: number
+          referral_code: string
+          status: string
+          total_clicks: number
+          total_earnings: number
+          total_paid_referrals: number
+          total_referrals: number
+          updated_at: string
+          user_id: string
+          withdrawn_earnings: number
+        }
+        Insert: {
+          code_edited?: boolean
+          created_at?: string
+          id?: string
+          payment_bank_account?: string | null
+          payment_bank_ifsc?: string | null
+          payment_bank_name?: string | null
+          payment_upi?: string | null
+          pending_earnings?: number
+          referral_code: string
+          status?: string
+          total_clicks?: number
+          total_earnings?: number
+          total_paid_referrals?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id: string
+          withdrawn_earnings?: number
+        }
+        Update: {
+          code_edited?: boolean
+          created_at?: string
+          id?: string
+          payment_bank_account?: string | null
+          payment_bank_ifsc?: string | null
+          payment_bank_name?: string | null
+          payment_upi?: string | null
+          pending_earnings?: number
+          referral_code?: string
+          status?: string
+          total_clicks?: number
+          total_earnings?: number
+          total_paid_referrals?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id?: string
+          withdrawn_earnings?: number
+        }
+        Relationships: []
+      }
       ai_strategy_cache: {
         Row: {
           created_at: string
@@ -197,6 +287,66 @@ export type Database = {
             columns: ["strategy_version_id"]
             isOneToOne: false
             referencedRelation: "strategy_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commissions: {
+        Row: {
+          affiliate_id: string
+          amount_paid: number
+          approved_at: string | null
+          commission_amount: number
+          commission_percent: number
+          created_at: string
+          id: string
+          paid_at: string | null
+          plan_purchased: string
+          referral_id: string
+          referred_user_id: string
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          amount_paid: number
+          approved_at?: string | null
+          commission_amount: number
+          commission_percent: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          plan_purchased: string
+          referral_id: string
+          referred_user_id: string
+          status?: string
+        }
+        Update: {
+          affiliate_id?: string
+          amount_paid?: number
+          approved_at?: string | null
+          commission_amount?: number
+          commission_percent?: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          plan_purchased?: string
+          referral_id?: string
+          referred_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
             referencedColumns: ["id"]
           },
         ]
@@ -402,6 +552,7 @@ export type Database = {
           monthly_reset_date: string
           onboarding_completed: boolean | null
           phone: string | null
+          referred_by: string | null
           strategies_count: number | null
           terms_accepted_at: string | null
           total_backtests_used: number | null
@@ -425,6 +576,7 @@ export type Database = {
           monthly_reset_date?: string
           onboarding_completed?: boolean | null
           phone?: string | null
+          referred_by?: string | null
           strategies_count?: number | null
           terms_accepted_at?: string | null
           total_backtests_used?: number | null
@@ -448,6 +600,7 @@ export type Database = {
           monthly_reset_date?: string
           onboarding_completed?: boolean | null
           phone?: string | null
+          referred_by?: string | null
           strategies_count?: number | null
           terms_accepted_at?: string | null
           total_backtests_used?: number | null
@@ -489,6 +642,82 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      referral_clicks: {
+        Row: {
+          affiliate_id: string
+          clicked_at: string
+          id: string
+          ip_address: string | null
+          referral_code: string
+          user_agent: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          clicked_at?: string
+          id?: string
+          ip_address?: string | null
+          referral_code: string
+          user_agent?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          clicked_at?: string
+          id?: string
+          ip_address?: string | null
+          referral_code?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_clicks_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          affiliate_id: string
+          converted_at: string | null
+          created_at: string
+          discount_applied: number | null
+          id: string
+          referral_code: string
+          referred_user_id: string
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          converted_at?: string | null
+          created_at?: string
+          discount_applied?: number | null
+          id?: string
+          referral_code: string
+          referred_user_id: string
+          status?: string
+        }
+        Update: {
+          affiliate_id?: string
+          converted_at?: string | null
+          created_at?: string
+          discount_applied?: number | null
+          id?: string
+          referral_code?: string
+          referred_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       strategies: {
         Row: {
@@ -882,6 +1111,53 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_requests: {
+        Row: {
+          admin_note: string | null
+          affiliate_id: string
+          amount: number
+          created_at: string
+          id: string
+          payment_details: Json
+          payment_method: string
+          processed_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          affiliate_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          payment_details?: Json
+          payment_method?: string
+          processed_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          affiliate_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_details?: Json
+          payment_method?: string
+          processed_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -900,7 +1176,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "affiliate"
       experience_level: "beginner" | "intermediate" | "advanced"
       experiment_event_type:
         | "strategy_change"
@@ -1039,7 +1315,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "affiliate"],
       experience_level: ["beginner", "intermediate", "advanced"],
       experiment_event_type: [
         "strategy_change",
