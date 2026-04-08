@@ -82,20 +82,8 @@ export const useAffiliate = (userId: string | undefined) => {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const becomeAffiliate = async () => {
-    if (!userId) return;
-    const code = `TT${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    const { data, error } = await supabase.from("affiliates").insert({
-      user_id: userId,
-      referral_code: code,
-    }).select().single();
-
-    if (!error && data) {
-      // Add affiliate role
-      await supabase.from("user_roles").insert({ user_id: userId, role: "affiliate" as any });
-      setAffiliate(data);
-      setIsAffiliate(true);
-    }
-    return { data, error };
+    // Disabled: only admins can assign affiliate role
+    return { data: null, error: { message: "Only admins can assign affiliate access" } };
   };
 
   const updatePaymentInfo = async (info: { payment_upi?: string; payment_bank_name?: string; payment_bank_account?: string; payment_bank_ifsc?: string }) => {
