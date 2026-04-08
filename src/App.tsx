@@ -29,6 +29,7 @@ const Refund = lazy(() => import("./pages/legal/Refund"));
 const Disclaimer = lazy(() => import("./pages/legal/Disclaimer"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CommunityStrategies = lazy(() => import("./pages/CommunityStrategies"));
+const AffiliateDashboard = lazy(() => import("./pages/AffiliateDashboard"));
 
 const queryClient = new QueryClient();
 
