@@ -308,6 +308,13 @@ const Auth = () => {
       {/* Main */}
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-sm">
+          {referralCode && isSignUp && (
+            <div className="mb-4 p-3 rounded-lg bg-accent/10 border border-accent/30 text-center">
+              <p className="text-sm text-accent font-medium">
+                🎉 You got 50% OFF using <span className="font-mono font-bold">{referralCode}</span>
+              </p>
+            </div>
+          )}
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold font-heading mb-2">
               {isSignUp ? "Create Account" : "Welcome Back"}
