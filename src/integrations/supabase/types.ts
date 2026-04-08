@@ -1174,6 +1174,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_affiliate_stats: {
+        Args: { _affiliate_id: string; _commission_amount: number }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "affiliate"
