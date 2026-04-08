@@ -39,6 +39,7 @@ interface LocationState {
 }
 
 const Auth = () => {
+  const referralCode = getReferralCode();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
