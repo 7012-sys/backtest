@@ -26,6 +26,8 @@ const AffiliateDashboard = () => {
   const [editingCode, setEditingCode] = useState(false);
   const [upi, setUpi] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [commissions, setCommissions] = useState<any[]>([]);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
 
   const { 
     affiliate, settings, dailyClicks, loading: affLoading, isAffiliate,
