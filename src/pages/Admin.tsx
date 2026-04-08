@@ -11,7 +11,8 @@ import { UsageChart } from "@/components/admin/UsageChart";
 import { FeedbackTable } from "@/components/admin/FeedbackTable";
 import { PaymentsTable } from "@/components/admin/PaymentsTable";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
-import { Users, CreditCard, BarChart3, AlertTriangle, MessageSquare, Wallet } from "lucide-react";
+import { AffiliateManagement } from "@/components/admin/AffiliateManagement";
+import { Users, CreditCard, BarChart3, AlertTriangle, MessageSquare, Wallet, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, startOfDay } from "date-fns";
 
