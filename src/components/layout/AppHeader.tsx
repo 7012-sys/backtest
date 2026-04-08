@@ -7,6 +7,21 @@ import { Settings, LogOut, ArrowLeft, Crown, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 
+const useAffiliateRole = (userId: string | undefined) => {
+  const [isAffiliate, setIsAffiliate] = useState(false);
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "affiliate")
+      .maybeSingle()
+      .then(({ data }) => setIsAffiliate(!!data));
+  }, [userId]);
+  return isAffiliate;
+};
+
 interface AppHeaderProps {
   showBack?: boolean;
   backTo?: string;
