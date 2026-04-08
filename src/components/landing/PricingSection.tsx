@@ -126,7 +126,7 @@ export const PricingSection = () => {
                 <span className="text-primary-foreground/70">/month</span>
               </div>
               <p className="text-sm mt-2 text-primary-foreground/80">
-                For serious learners & researchers
+                🎉 Get 50% OFF using a referral code!
               </p>
             </div>
 
