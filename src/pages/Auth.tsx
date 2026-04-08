@@ -145,6 +145,11 @@ const Auth = () => {
           throw error;
         }
 
+        // Link referral if any
+        if (data.user) {
+          await linkReferral(data.user.id);
+        }
+
         setSignupEmail(email);
         setShowVerificationPopup(true);
         setEmail("");
