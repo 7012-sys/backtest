@@ -65,6 +65,7 @@ const App = () => (
               <Route path="/strategies" element={<Strategies />} />
               <Route path="/compare-strategies" element={<StrategyComparison />} />
               <Route path="/community-strategies" element={<CommunityStrategies />} />
+              <Route path="/affiliate" element={<AffiliateDashboard />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/refund-policy" element={<Refund />} />
