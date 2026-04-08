@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { 
   Crown, 
   CheckCircle2, 
@@ -18,7 +19,9 @@ import {
   LineChart,
   Download,
   Upload,
-  HelpCircle
+  HelpCircle,
+  Tag,
+  Gift
 } from "lucide-react";
 import {
   Accordion,
@@ -29,6 +32,7 @@ import {
 import { User } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { toast } from "sonner";
+import { getReferralCode, setReferralCookie } from "@/hooks/useReferral";
 
 declare global {
   interface Window {
@@ -104,6 +108,63 @@ const Upgrade = () => {
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [referralCode, setReferralCodeInput] = useState("");
+  const [referralApplied, setReferralApplied] = useState(false);
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [originalPrice] = useState(999);
+
+  // Check for existing referral on mount
+  useEffect(() => {
+    const existing = getReferralCode();
+    if (existing) {
+      setReferralCodeInput(existing);
+      validateReferralCode(existing);
+    }
+  }, []);
+
+  const validateReferralCode = async (code: string) => {
+    const { data: affiliate } = await supabase
+      .from("affiliates")
+      .select("id, status")
+      .eq("referral_code", code)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (!affiliate) {
+      setReferralApplied(false);
+      setDiscountPercent(0);
+      return false;
+    }
+
+    const { data: settings } = await supabase
+      .from("affiliate_settings")
+      .select("discount_percent, is_enabled")
+      .limit(1)
+      .single();
+
+    if (settings?.is_enabled && settings.discount_percent > 0) {
+      setDiscountPercent(settings.discount_percent);
+      setReferralApplied(true);
+      setReferralCookie(code);
+      return true;
+    }
+    return false;
+  };
+
+  const handleApplyReferral = async () => {
+    const code = referralCode.trim().toUpperCase();
+    if (!code) { toast.error("Please enter a referral code"); return; }
+    const valid = await validateReferralCode(code);
+    if (valid) {
+      toast.success(`🎉 Referral code applied! You get ${discountPercent}% OFF`);
+    } else {
+      toast.error("Invalid or inactive referral code");
+    }
+  };
+
+  const discountedPrice = referralApplied
+    ? Math.round(originalPrice * (1 - discountPercent / 100))
+    : originalPrice;
 
   useEffect(() => {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -282,21 +343,61 @@ const Upgrade = () => {
                 </p>
               </div>
               <div className="text-center">
-                <Badge className="bg-success/10 text-success border-success/20 mb-3">
-                  50% OFF — Limited Time
-                </Badge>
+                {referralApplied ? (
+                  <Badge className="bg-success/10 text-success border-success/20 mb-3">
+                    <Gift className="h-3 w-3 mr-1" /> {discountPercent}% OFF Applied!
+                  </Badge>
+                ) : (
+                  <Badge className="bg-muted/50 text-muted-foreground border-border mb-3">
+                    Have a referral code? Enter below
+                  </Badge>
+                )}
                 <div className="flex items-baseline justify-center gap-2 mb-1">
                   <span className="text-xl text-muted-foreground line-through flex items-center">
-                    <IndianRupee className="h-4 w-4" />1,999
+                    <IndianRupee className="h-4 w-4" />{referralApplied ? "999" : "1,999"}
                   </span>
                 </div>
                 <div className="flex items-baseline justify-center gap-1 mb-1">
                   <IndianRupee className="h-8 w-8 text-accent" />
-                  <span className="text-6xl font-bold font-heading text-accent">999</span>
+                  <span className="text-6xl font-bold font-heading text-accent">
+                    {referralApplied ? discountedPrice : 999}
+                  </span>
                 </div>
-                <div className="text-sm text-muted-foreground mb-4">
+                <div className="text-sm text-muted-foreground mb-3">
                   per <span className="font-semibold text-foreground">month</span> access
                 </div>
+
+                {/* Referral Code Input */}
+                <div className="mb-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter referral code"
+                      value={referralCode}
+                      onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
+                      disabled={referralApplied}
+                      className="text-center text-sm font-mono"
+                    />
+                    <Button
+                      variant={referralApplied ? "outline" : "secondary"}
+                      size="sm"
+                      onClick={handleApplyReferral}
+                      disabled={referralApplied}
+                      className="shrink-0"
+                    >
+                      {referralApplied ? (
+                        <><CheckCircle2 className="h-4 w-4 mr-1 text-success" /> Applied</>
+                      ) : (
+                        <><Tag className="h-4 w-4 mr-1" /> Apply</>
+                      )}
+                    </Button>
+                  </div>
+                  {referralApplied && (
+                    <p className="text-xs text-success mt-1.5">
+                      🎉 You're saving ₹{originalPrice - discountedPrice}/month with code {referralCode}
+                    </p>
+                  )}
+                </div>
+
                 <Button 
                   size="lg"
                   onClick={handleUpgrade}
@@ -311,7 +412,7 @@ const Upgrade = () => {
                   ) : (
                     <>
                       <Crown className="h-5 w-5 mr-2" />
-                      Upgrade Now
+                      {referralApplied ? `Upgrade Now — ₹${discountedPrice}/mo` : "Upgrade Now"}
                     </>
                   )}
                 </Button>
