@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { 
   Crown, 
   CheckCircle2, 
@@ -18,7 +19,9 @@ import {
   LineChart,
   Download,
   Upload,
-  HelpCircle
+  HelpCircle,
+  Tag,
+  Gift
 } from "lucide-react";
 import {
   Accordion,
@@ -29,6 +32,7 @@ import {
 import { User } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { toast } from "sonner";
+import { getReferralCode, setReferralCookie } from "@/hooks/useReferral";
 
 declare global {
   interface Window {
