@@ -176,6 +176,33 @@ export const AffiliateManagement = () => {
         </TabsList>
 
         <TabsContent value="affiliates">
+          {/* Add Affiliate Section */}
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2"><UserPlus className="h-5 w-5 text-accent" /> Add New Affiliate</CardTitle>
+              <CardDescription>Promote a user to affiliate status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select a user..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allUsers.map(u => (
+                      <SelectItem key={u.user_id} value={u.user_id}>
+                        {u.display_name || u.email || u.user_id.slice(0, 8)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleMakeAffiliate} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                  <UserPlus className="h-4 w-4 mr-1.5" /> Make Affiliate
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2"><Award className="h-5 w-5 text-accent" /> Leaderboard</CardTitle>
