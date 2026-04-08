@@ -11,7 +11,8 @@ import { UsageChart } from "@/components/admin/UsageChart";
 import { FeedbackTable } from "@/components/admin/FeedbackTable";
 import { PaymentsTable } from "@/components/admin/PaymentsTable";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
-import { Users, CreditCard, BarChart3, AlertTriangle, MessageSquare, Wallet } from "lucide-react";
+import { AffiliateManagement } from "@/components/admin/AffiliateManagement";
+import { Users, CreditCard, BarChart3, AlertTriangle, MessageSquare, Wallet, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, startOfDay } from "date-fns";
 
@@ -155,6 +156,9 @@ const Admin = () => {
             <TabsTrigger value="analytics" className="gap-1.5">
               <BarChart3 className="h-4 w-4" /> Analytics
             </TabsTrigger>
+            <TabsTrigger value="affiliates" className="gap-1.5">
+              <Link2 className="h-4 w-4" /> Affiliates
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -175,6 +179,10 @@ const Admin = () => {
 
           <TabsContent value="analytics">
             <UsageChart data={usageData} />
+          </TabsContent>
+
+          <TabsContent value="affiliates">
+            <AffiliateManagement />
           </TabsContent>
         </Tabs>
       </div>

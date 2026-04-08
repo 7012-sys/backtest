@@ -198,7 +198,7 @@ const Upgrade = () => {
           key: responseData.key_id,
           subscription_id: responseData.subscription_id,
           name: "Trade Strategy Backtester",
-          description: "Pro Plan - ₹499/month",
+          description: "Pro Plan - ₹999/month",
           handler: async function (response: any) {
             toast.success("Payment successful! Activating Pro plan...");
             // Verify payment server-side and activate subscription securely
@@ -287,12 +287,12 @@ const Upgrade = () => {
                 </Badge>
                 <div className="flex items-baseline justify-center gap-2 mb-1">
                   <span className="text-xl text-muted-foreground line-through flex items-center">
-                    <IndianRupee className="h-4 w-4" />999
+                    <IndianRupee className="h-4 w-4" />1,999
                   </span>
                 </div>
                 <div className="flex items-baseline justify-center gap-1 mb-1">
                   <IndianRupee className="h-8 w-8 text-accent" />
-                  <span className="text-6xl font-bold font-heading text-accent">499</span>
+                  <span className="text-6xl font-bold font-heading text-accent">999</span>
                 </div>
                 <div className="text-sm text-muted-foreground mb-4">
                   per <span className="font-semibold text-foreground">month</span> access
@@ -365,7 +365,7 @@ const Upgrade = () => {
                     <Crown className="h-3 w-3 text-accent" />
                     <span className="text-sm font-medium text-accent">Pro</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">₹499/month</span>
+                  <span className="text-xs text-muted-foreground">₹999/month</span>
                 </div>
               </div>
             </div>
@@ -458,7 +458,7 @@ const Upgrade = () => {
                 ) : (
                   <>
                     <Crown className="h-5 w-5 mr-2" />
-                    Upgrade to Pro — ₹499/month
+                    Upgrade to Pro — ₹999/month
                   </>
                 )}
               </Button>
