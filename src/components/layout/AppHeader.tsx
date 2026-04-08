@@ -87,6 +87,19 @@ export const AppHeader = ({
             </Button>
           )}
           
+          {/* Affiliate Link */}
+          {userId && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => navigate("/affiliate")}
+              title="Affiliate Program"
+            >
+              <Link2 className="h-5 w-5" />
+            </Button>
+          )}
+          
           {rightContent}
           {!rightContent && onSignOut && (
             <>
