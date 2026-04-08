@@ -243,31 +243,43 @@ const Upgrade = () => {
         throw new Error("No active session");
       }
 
+      // Pass referral code to server for validation
       const { data, error } = await supabase.functions.invoke("create-razorpay-subscription", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          referral_code: referralApplied ? referralCode.trim().toUpperCase() : null,
         },
       });
 
       if (error) throw error;
 
       const responseData = data?.data || data;
+      const orderAmount = responseData.amount; // amount in paise from server
 
       {
-        // Always use inline Razorpay checkout modal
+        // Use order-based Razorpay checkout with server-determined price
         const options = {
           key: responseData.key_id,
-          subscription_id: responseData.subscription_id,
-          name: "Trade Strategy Backtester",
-          description: "Pro Plan - ₹999/month",
+          order_id: responseData.order_id,
+          amount: orderAmount,
+          currency: responseData.currency || "INR",
+          name: "TradeTest",
+          description: responseData.discount_percent > 0
+            ? `Pro Plan - ${responseData.discount_percent}% OFF applied`
+            : "Pro Plan - ₹999/month",
           handler: async function (response: any) {
             toast.success("Payment successful! Activating Pro plan...");
-            // Verify payment server-side and activate subscription securely
             const { error: activateError } = await supabase.functions.invoke("activate-subscription", {
               body: {
                 razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_subscription_id: response.razorpay_subscription_id,
+                razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
+                referral_code: responseData.referral_code || null,
+                affiliate_id: responseData.affiliate_id || null,
+                discount_percent: responseData.discount_percent || 0,
+                amount_paid: orderAmount / 100,
               },
             });
             
@@ -277,7 +289,6 @@ const Upgrade = () => {
               return;
             }
             
-            // Navigate to success page
             navigate("/upgrade/success");
           },
           prefill: {
