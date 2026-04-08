@@ -71,6 +71,9 @@ export const AffiliateManagement = () => {
       supabase.from("affiliate_settings").select("*").limit(1).single(),
     ]);
 
+    const affiliateUserIds = new Set(affs?.map(a => a.user_id) || []);
+    setAllUsers((profs || []).filter(p => !affiliateUserIds.has(p.user_id)));
+
     setAffiliates(affs?.map(a => ({ ...a, profile: profs?.find(p => p.user_id === a.user_id) })) || []);
     
     const wdProfiles = profs || [];
@@ -87,6 +90,34 @@ export const AffiliateManagement = () => {
       setMinWithdrawal(String(sett.min_withdrawal));
     }
     setLoading(false);
+  };
+
+  const handleMakeAffiliate = async () => {
+    if (!selectedUserId) { toast.error("Select a user"); return; }
+    const code = `TT${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    
+    const { error: affError } = await supabase.from("affiliates").insert({
+      user_id: selectedUserId,
+      referral_code: code,
+    });
+    if (affError) { toast.error("Failed to create affiliate: " + affError.message); return; }
+
+    const { error: roleError } = await supabase.from("user_roles").insert({
+      user_id: selectedUserId,
+      role: "affiliate" as any,
+    });
+    if (roleError) { toast.error("Affiliate created but role assignment failed"); }
+    
+    toast.success("User promoted to affiliate!");
+    setSelectedUserId("");
+    fetchAll();
+  };
+
+  const handleRemoveAffiliate = async (affiliateUserId: string, affiliateId: string) => {
+    await supabase.from("user_roles").delete().eq("user_id", affiliateUserId).eq("role", "affiliate");
+    await supabase.from("affiliates").update({ status: "removed" }).eq("id", affiliateId);
+    toast.success("Affiliate access revoked");
+    fetchAll();
   };
 
   const handleUpdateSettings = async () => {
