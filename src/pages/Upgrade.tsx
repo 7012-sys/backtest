@@ -458,7 +458,7 @@ const Upgrade = () => {
                 ) : (
                   <>
                     <Crown className="h-5 w-5 mr-2" />
-                    Upgrade to Pro — ₹499/month
+                    Upgrade to Pro — ₹999/month
                   </>
                 )}
               </Button>
