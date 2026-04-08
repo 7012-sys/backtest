@@ -47,6 +47,13 @@ interface Subscription {
   current_period_end: string | null;
 }
 
+interface ReferralValidationResult {
+  valid: boolean;
+  message?: string;
+  code?: string;
+  discount_percent?: number;
+}
+
 const proFeatures = [
   { icon: Zap, title: "Unlimited Simulations", description: "Run as many historical simulations as you want, no monthly limits" },
   { icon: TrendingUp, title: "AI Strategy Generation", description: "Generate up to 30 strategies/day from plain English descriptions" },
@@ -118,47 +125,59 @@ const Upgrade = () => {
     const existing = getReferralCode();
     if (existing) {
       setReferralCodeInput(existing);
-      validateReferralCode(existing);
+      void validateReferralCode(existing);
     }
   }, []);
 
-  const validateReferralCode = async (code: string) => {
-    const { data: affiliate } = await supabase
-      .from("affiliates")
-      .select("id, status")
-      .ilike("referral_code", code)
-      .eq("status", "active")
-      .maybeSingle();
+  const validateReferralCode = async (rawCode: string): Promise<ReferralValidationResult> => {
+    const code = rawCode.trim().toUpperCase();
 
-    if (!affiliate) {
+    if (!code) {
       setReferralApplied(false);
       setDiscountPercent(0);
-      return false;
+      return { valid: false, message: "Please enter a referral code" };
     }
 
-    const { data: settings } = await supabase
-      .from("affiliate_settings")
-      .select("discount_percent, is_enabled")
-      .limit(1)
-      .single();
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data, error } = await supabase.functions.invoke("validate-referral-code", {
+      headers: session ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+      body: { code },
+    });
 
-    if (settings?.is_enabled && settings.discount_percent > 0) {
-      setDiscountPercent(settings.discount_percent);
+    if (error) {
+      console.error("Referral validation failed:", error);
+      setReferralApplied(false);
+      setDiscountPercent(0);
+      return { valid: false, message: "Unable to validate referral code right now" };
+    }
+
+    const result = data as ReferralValidationResult | null;
+
+    if (result?.valid && (result.discount_percent ?? 0) > 0) {
+      const normalizedCode = result.code ?? code;
+      setDiscountPercent(result.discount_percent ?? 0);
       setReferralApplied(true);
-      setReferralCookie(code);
-      return true;
+      setReferralCookie(normalizedCode);
+      setReferralCodeInput(normalizedCode);
+      return { valid: true, code: normalizedCode, discount_percent: result.discount_percent };
     }
-    return false;
+
+    setReferralApplied(false);
+    setDiscountPercent(0);
+    return {
+      valid: false,
+      message: result?.message || "Invalid or inactive referral code",
+    };
   };
 
   const handleApplyReferral = async () => {
     const code = referralCode.trim();
     if (!code) { toast.error("Please enter a referral code"); return; }
-    const valid = await validateReferralCode(code);
-    if (valid) {
-      toast.success(`🎉 Referral code applied! You get ${discountPercent}% OFF`);
+    const result = await validateReferralCode(code);
+    if (result.valid) {
+      toast.success(`🎉 Referral code applied! You get ${result.discount_percent}% OFF`);
     } else {
-      toast.error("Invalid or inactive referral code");
+      toast.error(result.message || "Invalid or inactive referral code");
     }
   };
 
