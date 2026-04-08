@@ -152,7 +152,7 @@ const Upgrade = () => {
   };
 
   const handleApplyReferral = async () => {
-    const code = referralCode.trim().toUpperCase();
+    const code = referralCode.trim();
     if (!code) { toast.error("Please enter a referral code"); return; }
     const valid = await validateReferralCode(code);
     if (valid) {
