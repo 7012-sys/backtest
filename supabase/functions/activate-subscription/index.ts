@@ -133,27 +133,11 @@ serve(async (req) => {
             status: "pending",
           });
 
-          // Update affiliate stats
-          await supabaseAdmin
-            .from("affiliates")
-            .update({
-              total_paid_referrals: (await supabaseAdmin
-                .from("affiliates")
-                .select("total_paid_referrals")
-                .eq("id", body.affiliate_id)
-                .single()).data?.total_paid_referrals + 1 || 1,
-              total_earnings: (await supabaseAdmin
-                .from("affiliates")
-                .select("total_earnings")
-                .eq("id", body.affiliate_id)
-                .single()).data?.total_earnings + commissionAmount || commissionAmount,
-              pending_earnings: (await supabaseAdmin
-                .from("affiliates")
-                .select("pending_earnings")
-                .eq("id", body.affiliate_id)
-                .single()).data?.pending_earnings + commissionAmount || commissionAmount,
-            })
-            .eq("id", body.affiliate_id);
+          // Update affiliate stats atomically
+          await supabaseAdmin.rpc("increment_affiliate_stats", {
+            _affiliate_id: body.affiliate_id,
+            _commission_amount: commissionAmount,
+          });
 
           console.log(`Commission of ₹${commissionAmount} created for affiliate ${body.affiliate_id}`);
         }
