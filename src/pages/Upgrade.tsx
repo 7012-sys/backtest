@@ -287,12 +287,12 @@ const Upgrade = () => {
                 </Badge>
                 <div className="flex items-baseline justify-center gap-2 mb-1">
                   <span className="text-xl text-muted-foreground line-through flex items-center">
-                    <IndianRupee className="h-4 w-4" />999
+                    <IndianRupee className="h-4 w-4" />1,999
                   </span>
                 </div>
                 <div className="flex items-baseline justify-center gap-1 mb-1">
                   <IndianRupee className="h-8 w-8 text-accent" />
-                  <span className="text-6xl font-bold font-heading text-accent">499</span>
+                  <span className="text-6xl font-bold font-heading text-accent">999</span>
                 </div>
                 <div className="text-sm text-muted-foreground mb-4">
                   per <span className="font-semibold text-foreground">month</span> access
