@@ -570,7 +570,7 @@ const Upgrade = () => {
                 ) : (
                   <>
                     <Crown className="h-5 w-5 mr-2" />
-                    Upgrade to Pro — ₹999/month
+                    Upgrade to Pro — ₹{referralApplied ? discountedPrice : 999}/month
                   </>
                 )}
               </Button>
