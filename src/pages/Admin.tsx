@@ -156,6 +156,9 @@ const Admin = () => {
             <TabsTrigger value="analytics" className="gap-1.5">
               <BarChart3 className="h-4 w-4" /> Analytics
             </TabsTrigger>
+            <TabsTrigger value="affiliates" className="gap-1.5">
+              <Link2 className="h-4 w-4" /> Affiliates
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
