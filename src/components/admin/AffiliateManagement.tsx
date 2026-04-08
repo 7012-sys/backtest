@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Users, IndianRupee, Award, Settings, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Users, IndianRupee, Award, Settings, CheckCircle2, XCircle, Clock, UserPlus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Affiliate {
   id: string;
@@ -56,6 +57,8 @@ export const AffiliateManagement = () => {
   const [commissionPercent, setCommissionPercent] = useState("");
   const [discountPercent, setDiscountPercent] = useState("");
   const [minWithdrawal, setMinWithdrawal] = useState("");
+  const [allUsers, setAllUsers] = useState<{ user_id: string; display_name: string | null; email: string | null }[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -67,6 +70,9 @@ export const AffiliateManagement = () => {
       supabase.from("withdrawal_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("affiliate_settings").select("*").limit(1).single(),
     ]);
+
+    const affiliateUserIds = new Set(affs?.map(a => a.user_id) || []);
+    setAllUsers((profs || []).filter(p => !affiliateUserIds.has(p.user_id)));
 
     setAffiliates(affs?.map(a => ({ ...a, profile: profs?.find(p => p.user_id === a.user_id) })) || []);
     
@@ -84,6 +90,34 @@ export const AffiliateManagement = () => {
       setMinWithdrawal(String(sett.min_withdrawal));
     }
     setLoading(false);
+  };
+
+  const handleMakeAffiliate = async () => {
+    if (!selectedUserId) { toast.error("Select a user"); return; }
+    const code = `TT${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    
+    const { error: affError } = await supabase.from("affiliates").insert({
+      user_id: selectedUserId,
+      referral_code: code,
+    });
+    if (affError) { toast.error("Failed to create affiliate: " + affError.message); return; }
+
+    const { error: roleError } = await supabase.from("user_roles").insert({
+      user_id: selectedUserId,
+      role: "affiliate" as any,
+    });
+    if (roleError) { toast.error("Affiliate created but role assignment failed"); }
+    
+    toast.success("User promoted to affiliate!");
+    setSelectedUserId("");
+    fetchAll();
+  };
+
+  const handleRemoveAffiliate = async (affiliateUserId: string, affiliateId: string) => {
+    await supabase.from("user_roles").delete().eq("user_id", affiliateUserId).eq("role", "affiliate");
+    await supabase.from("affiliates").update({ status: "removed" }).eq("id", affiliateId);
+    toast.success("Affiliate access revoked");
+    fetchAll();
   };
 
   const handleUpdateSettings = async () => {
@@ -142,6 +176,33 @@ export const AffiliateManagement = () => {
         </TabsList>
 
         <TabsContent value="affiliates">
+          {/* Add Affiliate Section */}
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2"><UserPlus className="h-5 w-5 text-accent" /> Add New Affiliate</CardTitle>
+              <CardDescription>Promote a user to affiliate status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select a user..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allUsers.map(u => (
+                      <SelectItem key={u.user_id} value={u.user_id}>
+                        {u.display_name || u.email || u.user_id.slice(0, 8)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleMakeAffiliate} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                  <UserPlus className="h-4 w-4 mr-1.5" /> Make Affiliate
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2"><Award className="h-5 w-5 text-accent" /> Leaderboard</CardTitle>
@@ -174,9 +235,14 @@ export const AffiliateManagement = () => {
                         <TableCell className="font-medium">₹{a.total_earnings.toLocaleString()}</TableCell>
                         <TableCell>{statusBadge(a.status)}</TableCell>
                         <TableCell>
-                          <Button size="sm" variant="ghost" onClick={() => handleSuspendAffiliate(a.id, a.status)}>
-                            {a.status === "suspended" ? "Activate" : "Suspend"}
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => handleSuspendAffiliate(a.id, a.status)}>
+                              {a.status === "suspended" ? "Activate" : "Suspend"}
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleRemoveAffiliate(a.user_id, a.id)}>
+                              Remove
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

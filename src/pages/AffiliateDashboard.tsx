@@ -116,30 +116,22 @@ const AffiliateDashboard = () => {
     return <AppLayout loading={true} title="Affiliate"><div /></AppLayout>;
   }
 
-  // Not yet an affiliate - show CTA
+  // Not an affiliate - redirect
   if (!isAffiliate) {
     return (
-      <AppLayout showBack backTo="/dashboard" title="Affiliate Program" subtitle="Earn by sharing TradeTest">
-        <div className="max-w-2xl mx-auto">
-          <Card className="border-accent/30 bg-gradient-to-br from-accent/10 to-accent/5">
-            <CardContent className="py-12 text-center">
-              <Award className="h-16 w-16 mx-auto mb-4 text-accent" />
-              <h2 className="text-2xl font-bold font-heading mb-3">Become an Affiliate</h2>
-              <p className="text-muted-foreground mb-2 max-w-md mx-auto">
-                Share TradeTest with your audience and earn <span className="text-accent font-semibold">{settings?.commission_percent || 20}% commission</span> on every sale.
-              </p>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
-                Your referrals get <span className="text-success font-semibold">{settings?.discount_percent || 50}% off</span> their first subscription!
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button size="lg" onClick={handleBecomeAffiliate} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                  <Zap className="h-5 w-5 mr-2" />
-                  Join Now — It's Free
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <AppLayout showBack backTo="/dashboard" title="Access Denied">
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Award className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-bold font-heading mb-2">Affiliate Access Required</h2>
+            <p className="text-muted-foreground mb-4">
+              You don't have affiliate access. Please contact the admin to get approved as an affiliate.
+            </p>
+            <Button variant="outline" onClick={() => navigate("/dashboard")}>
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
       </AppLayout>
     );
   }
