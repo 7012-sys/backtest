@@ -57,6 +57,8 @@ export const AffiliateManagement = () => {
   const [commissionPercent, setCommissionPercent] = useState("");
   const [discountPercent, setDiscountPercent] = useState("");
   const [minWithdrawal, setMinWithdrawal] = useState("");
+  const [allUsers, setAllUsers] = useState<{ user_id: string; display_name: string | null; email: string | null }[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
 
   useEffect(() => { fetchAll(); }, []);
 
