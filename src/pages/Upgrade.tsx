@@ -403,15 +403,20 @@ const Upgrade = () => {
                     <Input
                       placeholder="Enter referral code"
                       value={referralCode}
-                      onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
-                      disabled={referralApplied}
+                      onChange={(e) => {
+                        setReferralCodeInput(e.target.value.toUpperCase());
+                        // Reset applied state when user edits the code
+                        if (referralApplied) {
+                          setReferralApplied(false);
+                          setDiscountPercent(0);
+                        }
+                      }}
                       className="text-center text-sm font-mono"
                     />
                     <Button
                       variant={referralApplied ? "outline" : "secondary"}
                       size="sm"
                       onClick={handleApplyReferral}
-                      disabled={referralApplied}
                       className="shrink-0"
                     >
                       {referralApplied ? (
