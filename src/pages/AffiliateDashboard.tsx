@@ -240,8 +240,10 @@ const AffiliateDashboard = () => {
         </div>
 
         <Tabs defaultValue="analytics" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex flex-wrap">
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="commissions">Commissions</TabsTrigger>
+            <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
             <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
             <TabsTrigger value="payment">Payment Info</TabsTrigger>
           </TabsList>
