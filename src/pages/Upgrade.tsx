@@ -343,21 +343,61 @@ const Upgrade = () => {
                 </p>
               </div>
               <div className="text-center">
-                <Badge className="bg-success/10 text-success border-success/20 mb-3">
-                  50% OFF — Limited Time
-                </Badge>
+                {referralApplied ? (
+                  <Badge className="bg-success/10 text-success border-success/20 mb-3">
+                    <Gift className="h-3 w-3 mr-1" /> {discountPercent}% OFF Applied!
+                  </Badge>
+                ) : (
+                  <Badge className="bg-muted/50 text-muted-foreground border-border mb-3">
+                    Have a referral code? Enter below
+                  </Badge>
+                )}
                 <div className="flex items-baseline justify-center gap-2 mb-1">
                   <span className="text-xl text-muted-foreground line-through flex items-center">
-                    <IndianRupee className="h-4 w-4" />1,999
+                    <IndianRupee className="h-4 w-4" />{referralApplied ? "999" : "1,999"}
                   </span>
                 </div>
                 <div className="flex items-baseline justify-center gap-1 mb-1">
                   <IndianRupee className="h-8 w-8 text-accent" />
-                  <span className="text-6xl font-bold font-heading text-accent">999</span>
+                  <span className="text-6xl font-bold font-heading text-accent">
+                    {referralApplied ? discountedPrice : 999}
+                  </span>
                 </div>
-                <div className="text-sm text-muted-foreground mb-4">
+                <div className="text-sm text-muted-foreground mb-3">
                   per <span className="font-semibold text-foreground">month</span> access
                 </div>
+
+                {/* Referral Code Input */}
+                <div className="mb-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter referral code"
+                      value={referralCode}
+                      onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
+                      disabled={referralApplied}
+                      className="text-center text-sm font-mono"
+                    />
+                    <Button
+                      variant={referralApplied ? "outline" : "secondary"}
+                      size="sm"
+                      onClick={handleApplyReferral}
+                      disabled={referralApplied}
+                      className="shrink-0"
+                    >
+                      {referralApplied ? (
+                        <><CheckCircle2 className="h-4 w-4 mr-1 text-success" /> Applied</>
+                      ) : (
+                        <><Tag className="h-4 w-4 mr-1" /> Apply</>
+                      )}
+                    </Button>
+                  </div>
+                  {referralApplied && (
+                    <p className="text-xs text-success mt-1.5">
+                      🎉 You're saving ₹{originalPrice - discountedPrice}/month with code {referralCode}
+                    </p>
+                  )}
+                </div>
+
                 <Button 
                   size="lg"
                   onClick={handleUpgrade}
@@ -372,7 +412,7 @@ const Upgrade = () => {
                   ) : (
                     <>
                       <Crown className="h-5 w-5 mr-2" />
-                      Upgrade Now
+                      {referralApplied ? `Upgrade Now — ₹${discountedPrice}/mo` : "Upgrade Now"}
                     </>
                   )}
                 </Button>
