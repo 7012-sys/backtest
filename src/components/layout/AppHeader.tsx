@@ -103,8 +103,8 @@ export const AppHeader = ({
             </Button>
           )}
           
-          {/* Affiliate Link */}
-          {userId && (
+          {/* Affiliate Link - only for users with affiliate role */}
+          {userId && isAffiliateUser && (
             <Button
               variant="ghost"
               size="icon"
