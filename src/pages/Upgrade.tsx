@@ -108,6 +108,63 @@ const Upgrade = () => {
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [referralCode, setReferralCodeInput] = useState("");
+  const [referralApplied, setReferralApplied] = useState(false);
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [originalPrice] = useState(999);
+
+  // Check for existing referral on mount
+  useEffect(() => {
+    const existing = getReferralCode();
+    if (existing) {
+      setReferralCodeInput(existing);
+      validateReferralCode(existing);
+    }
+  }, []);
+
+  const validateReferralCode = async (code: string) => {
+    const { data: affiliate } = await supabase
+      .from("affiliates")
+      .select("id, status")
+      .eq("referral_code", code)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (!affiliate) {
+      setReferralApplied(false);
+      setDiscountPercent(0);
+      return false;
+    }
+
+    const { data: settings } = await supabase
+      .from("affiliate_settings")
+      .select("discount_percent, is_enabled")
+      .limit(1)
+      .single();
+
+    if (settings?.is_enabled && settings.discount_percent > 0) {
+      setDiscountPercent(settings.discount_percent);
+      setReferralApplied(true);
+      setReferralCookie(code);
+      return true;
+    }
+    return false;
+  };
+
+  const handleApplyReferral = async () => {
+    const code = referralCode.trim().toUpperCase();
+    if (!code) { toast.error("Please enter a referral code"); return; }
+    const valid = await validateReferralCode(code);
+    if (valid) {
+      toast.success(`🎉 Referral code applied! You get ${discountPercent}% OFF`);
+    } else {
+      toast.error("Invalid or inactive referral code");
+    }
+  };
+
+  const discountedPrice = referralApplied
+    ? Math.round(originalPrice * (1 - discountPercent / 100))
+    : originalPrice;
 
   useEffect(() => {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
