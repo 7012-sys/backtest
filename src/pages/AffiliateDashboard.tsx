@@ -12,9 +12,11 @@ import { useAffiliate } from "@/hooks/useAffiliate";
 import { toast } from "sonner";
 import { 
   Copy, Link2, Users, IndianRupee, TrendingUp, MousePointer, 
-  Wallet, Award, Star, Zap, ArrowUpRight, Edit3, CheckCircle2
+  Wallet, Award, Star, Zap, ArrowUpRight, Edit3, CheckCircle2,
+  History, Receipt
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const AffiliateDashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +26,8 @@ const AffiliateDashboard = () => {
   const [editingCode, setEditingCode] = useState(false);
   const [upi, setUpi] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [commissions, setCommissions] = useState<any[]>([]);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
 
   const { 
     affiliate, settings, dailyClicks, loading: affLoading, isAffiliate,
@@ -40,6 +44,20 @@ const AffiliateDashboard = () => {
 
   useEffect(() => {
     if (affiliate?.payment_upi) setUpi(affiliate.payment_upi);
+  }, [affiliate]);
+
+  // Fetch commissions and withdrawals
+  useEffect(() => {
+    if (!affiliate) return;
+    const fetchHistory = async () => {
+      const [{ data: comms }, { data: wds }] = await Promise.all([
+        supabase.from("commissions").select("*").eq("affiliate_id", affiliate.id).order("created_at", { ascending: false }),
+        supabase.from("withdrawal_requests").select("*").eq("affiliate_id", affiliate.id).order("created_at", { ascending: false }),
+      ]);
+      setCommissions(comms || []);
+      setWithdrawals(wds || []);
+    };
+    fetchHistory();
   }, [affiliate]);
 
   const handleBecomeAffiliate = async () => {
@@ -222,8 +240,10 @@ const AffiliateDashboard = () => {
         </div>
 
         <Tabs defaultValue="analytics" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex flex-wrap">
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="commissions">Commissions</TabsTrigger>
+            <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
             <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
             <TabsTrigger value="payment">Payment Info</TabsTrigger>
           </TabsList>
@@ -265,6 +285,96 @@ const AffiliateDashboard = () => {
                     <Bar dataKey="clicks" fill="hsl(var(--accent))" radius={[2, 2, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="commissions">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-accent" /> Commission History
+                </CardTitle>
+                <CardDescription>All commissions earned from referrals</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {commissions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No commissions yet. Share your referral link to start earning!</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Plan</TableHead>
+                          <TableHead>Amount Paid</TableHead>
+                          <TableHead>Commission</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {commissions.map((c) => (
+                          <TableRow key={c.id}>
+                            <TableCell className="text-xs">{new Date(c.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell className="capitalize">{c.plan_purchased}</TableCell>
+                            <TableCell>₹{c.amount_paid.toLocaleString()}</TableCell>
+                            <TableCell className="font-semibold text-accent">₹{c.commission_amount.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Badge variant={c.status === "paid" ? "default" : c.status === "approved" ? "secondary" : "outline"} className="text-xs capitalize">
+                                {c.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="withdrawals">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="h-4 w-4 text-accent" /> Withdrawal History
+                </CardTitle>
+                <CardDescription>All your withdrawal requests and their status</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {withdrawals.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No withdrawal requests yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Method</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Processed</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {withdrawals.map((w) => (
+                          <TableRow key={w.id}>
+                            <TableCell className="text-xs">{new Date(w.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell className="font-semibold">₹{w.amount.toLocaleString()}</TableCell>
+                            <TableCell className="uppercase text-xs">{w.payment_method}</TableCell>
+                            <TableCell>
+                              <Badge variant={w.status === "completed" ? "default" : w.status === "rejected" ? "destructive" : "outline"} className="text-xs capitalize">
+                                {w.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">{w.processed_at ? new Date(w.processed_at).toLocaleDateString() : "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
