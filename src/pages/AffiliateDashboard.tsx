@@ -46,6 +46,20 @@ const AffiliateDashboard = () => {
     if (affiliate?.payment_upi) setUpi(affiliate.payment_upi);
   }, [affiliate]);
 
+  // Fetch commissions and withdrawals
+  useEffect(() => {
+    if (!affiliate) return;
+    const fetchHistory = async () => {
+      const [{ data: comms }, { data: wds }] = await Promise.all([
+        supabase.from("commissions").select("*").eq("affiliate_id", affiliate.id).order("created_at", { ascending: false }),
+        supabase.from("withdrawal_requests").select("*").eq("affiliate_id", affiliate.id).order("created_at", { ascending: false }),
+      ]);
+      setCommissions(comms || []);
+      setWithdrawals(wds || []);
+    };
+    fetchHistory();
+  }, [affiliate]);
+
   const handleBecomeAffiliate = async () => {
     const result = await becomeAffiliate();
     if (result?.error) {
