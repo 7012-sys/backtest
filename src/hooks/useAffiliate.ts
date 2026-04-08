@@ -81,6 +81,27 @@ export const useAffiliate = (userId: string | undefined) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Realtime: auto-refresh when affiliates or commissions change
+  useEffect(() => {
+    if (!affiliate) return;
+
+    const channel = supabase
+      .channel(`affiliate-realtime-${affiliate.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'affiliates', filter: `id=eq.${affiliate.id}` },
+        () => fetchData()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'commissions', filter: `affiliate_id=eq.${affiliate.id}` },
+        () => fetchData()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [affiliate?.id, fetchData]);
+
   const becomeAffiliate = async () => {
     // Disabled: only admins can assign affiliate role
     return { data: null, error: { message: "Only admins can assign affiliate access" } };
