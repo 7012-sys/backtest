@@ -15,6 +15,7 @@ import { ArrowRight } from "lucide-react";
 const Index = () => {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
+  const { referralCode, discount } = useReferralDetection();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
