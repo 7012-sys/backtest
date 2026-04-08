@@ -289,6 +289,96 @@ const AffiliateDashboard = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="commissions">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-accent" /> Commission History
+                </CardTitle>
+                <CardDescription>All commissions earned from referrals</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {commissions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No commissions yet. Share your referral link to start earning!</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Plan</TableHead>
+                          <TableHead>Amount Paid</TableHead>
+                          <TableHead>Commission</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {commissions.map((c) => (
+                          <TableRow key={c.id}>
+                            <TableCell className="text-xs">{new Date(c.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell className="capitalize">{c.plan_purchased}</TableCell>
+                            <TableCell>₹{c.amount_paid.toLocaleString()}</TableCell>
+                            <TableCell className="font-semibold text-accent">₹{c.commission_amount.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Badge variant={c.status === "paid" ? "default" : c.status === "approved" ? "secondary" : "outline"} className="text-xs capitalize">
+                                {c.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="withdrawals">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="h-4 w-4 text-accent" /> Withdrawal History
+                </CardTitle>
+                <CardDescription>All your withdrawal requests and their status</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {withdrawals.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No withdrawal requests yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Method</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Processed</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {withdrawals.map((w) => (
+                          <TableRow key={w.id}>
+                            <TableCell className="text-xs">{new Date(w.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell className="font-semibold">₹{w.amount.toLocaleString()}</TableCell>
+                            <TableCell className="uppercase text-xs">{w.payment_method}</TableCell>
+                            <TableCell>
+                              <Badge variant={w.status === "completed" ? "default" : w.status === "rejected" ? "destructive" : "outline"} className="text-xs capitalize">
+                                {w.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">{w.processed_at ? new Date(w.processed_at).toLocaleDateString() : "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="withdraw">
             <Card>
               <CardHeader>
