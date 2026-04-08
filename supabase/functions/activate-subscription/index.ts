@@ -12,12 +12,11 @@ serve(async (req) => {
   }
 
   try {
-    const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID");
     const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+    if (!RAZORPAY_KEY_SECRET) {
       throw new Error("Razorpay credentials not configured");
     }
 
@@ -32,15 +31,25 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
-    const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = await req.json();
+    const body = await req.json();
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature,
+            // Legacy support for subscription-based flow
+            razorpay_subscription_id } = body;
 
-    if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
+    // Support both order-based and subscription-based verification
+    const isOrderBased = !!razorpay_order_id;
+    const verifyId = razorpay_order_id || razorpay_subscription_id;
+
+    if (!razorpay_payment_id || !verifyId || !razorpay_signature) {
       throw new Error("Missing payment verification fields");
     }
 
-    // Verify signature: HMAC SHA256 of "payment_id|subscription_id" with secret
+    // Verify signature: HMAC SHA256 of "order_id|payment_id" (or "payment_id|subscription_id")
     const encoder = new TextEncoder();
-    const message = `${razorpay_payment_id}|${razorpay_subscription_id}`;
+    const message = isOrderBased
+      ? `${razorpay_order_id}|${razorpay_payment_id}`
+      : `${razorpay_payment_id}|${razorpay_subscription_id}`;
+
     const key = await crypto.subtle.importKey(
       "raw",
       encoder.encode(RAZORPAY_KEY_SECRET),
@@ -66,7 +75,7 @@ serve(async (req) => {
       .update({
         plan: "pro",
         status: "active",
-        razorpay_subscription_id: razorpay_subscription_id,
+        razorpay_subscription_id: razorpay_order_id || razorpay_subscription_id,
         current_period_start: new Date().toISOString(),
         current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       })
@@ -75,6 +84,82 @@ serve(async (req) => {
     if (updateError) {
       console.error("Failed to update subscription:", updateError);
       throw new Error("Failed to activate subscription");
+    }
+
+    // Handle referral commission if applicable
+    if (body.referral_code && body.affiliate_id) {
+      try {
+        // Create referral record if not exists
+        const { data: existingRef } = await supabaseAdmin
+          .from("referrals")
+          .select("id")
+          .eq("referred_user_id", user.id)
+          .eq("affiliate_id", body.affiliate_id)
+          .maybeSingle();
+
+        const referralId = existingRef?.id;
+
+        if (referralId) {
+          // Update referral status to converted
+          await supabaseAdmin
+            .from("referrals")
+            .update({
+              status: "converted",
+              converted_at: new Date().toISOString(),
+              discount_applied: body.discount_percent || 0,
+            })
+            .eq("id", referralId);
+
+          // Fetch commission settings
+          const { data: settings } = await supabaseAdmin
+            .from("affiliate_settings")
+            .select("commission_percent")
+            .limit(1)
+            .single();
+
+          const commissionPercent = settings?.commission_percent || 20;
+          const amountPaid = body.amount_paid || 999;
+          const commissionAmount = Math.round(amountPaid * commissionPercent / 100);
+
+          // Create commission record
+          await supabaseAdmin.from("commissions").insert({
+            affiliate_id: body.affiliate_id,
+            referral_id: referralId,
+            referred_user_id: user.id,
+            amount_paid: amountPaid,
+            commission_percent: commissionPercent,
+            commission_amount: commissionAmount,
+            plan_purchased: "pro",
+            status: "pending",
+          });
+
+          // Update affiliate stats
+          await supabaseAdmin
+            .from("affiliates")
+            .update({
+              total_paid_referrals: (await supabaseAdmin
+                .from("affiliates")
+                .select("total_paid_referrals")
+                .eq("id", body.affiliate_id)
+                .single()).data?.total_paid_referrals + 1 || 1,
+              total_earnings: (await supabaseAdmin
+                .from("affiliates")
+                .select("total_earnings")
+                .eq("id", body.affiliate_id)
+                .single()).data?.total_earnings + commissionAmount || commissionAmount,
+              pending_earnings: (await supabaseAdmin
+                .from("affiliates")
+                .select("pending_earnings")
+                .eq("id", body.affiliate_id)
+                .single()).data?.pending_earnings + commissionAmount || commissionAmount,
+            })
+            .eq("id", body.affiliate_id);
+
+          console.log(`Commission of ₹${commissionAmount} created for affiliate ${body.affiliate_id}`);
+        }
+      } catch (commErr: any) {
+        console.error("Commission tracking error (non-fatal):", commErr?.message);
+      }
     }
 
     console.log("Subscription activated for user:", user.id);
