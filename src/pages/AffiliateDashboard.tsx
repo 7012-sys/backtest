@@ -12,9 +12,11 @@ import { useAffiliate } from "@/hooks/useAffiliate";
 import { toast } from "sonner";
 import { 
   Copy, Link2, Users, IndianRupee, TrendingUp, MousePointer, 
-  Wallet, Award, Star, Zap, ArrowUpRight, Edit3, CheckCircle2
+  Wallet, Award, Star, Zap, ArrowUpRight, Edit3, CheckCircle2,
+  History, Receipt
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const AffiliateDashboard = () => {
   const navigate = useNavigate();
