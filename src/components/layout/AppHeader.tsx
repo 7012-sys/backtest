@@ -42,6 +42,7 @@ export const AppHeader = ({
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>();
   const { isPro, isLoading, isExpired } = useSubscription(userId);
+  const isAffiliateUser = useAffiliateRole(userId);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
