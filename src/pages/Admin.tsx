@@ -180,6 +180,10 @@ const Admin = () => {
           <TabsContent value="analytics">
             <UsageChart data={usageData} />
           </TabsContent>
+
+          <TabsContent value="affiliates">
+            <AffiliateManagement />
+          </TabsContent>
         </Tabs>
       </div>
     </AppLayout>
