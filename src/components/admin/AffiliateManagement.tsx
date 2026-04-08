@@ -235,9 +235,14 @@ export const AffiliateManagement = () => {
                         <TableCell className="font-medium">₹{a.total_earnings.toLocaleString()}</TableCell>
                         <TableCell>{statusBadge(a.status)}</TableCell>
                         <TableCell>
-                          <Button size="sm" variant="ghost" onClick={() => handleSuspendAffiliate(a.id, a.status)}>
-                            {a.status === "suspended" ? "Activate" : "Suspend"}
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => handleSuspendAffiliate(a.id, a.status)}>
+                              {a.status === "suspended" ? "Activate" : "Suspend"}
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleRemoveAffiliate(a.user_id, a.id)}>
+                              Remove
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
