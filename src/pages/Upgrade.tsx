@@ -126,7 +126,7 @@ const Upgrade = () => {
     const { data: affiliate } = await supabase
       .from("affiliates")
       .select("id, status")
-      .eq("referral_code", code)
+      .ilike("referral_code", code)
       .eq("status", "active")
       .maybeSingle();
 
@@ -152,7 +152,7 @@ const Upgrade = () => {
   };
 
   const handleApplyReferral = async () => {
-    const code = referralCode.trim().toUpperCase();
+    const code = referralCode.trim();
     if (!code) { toast.error("Please enter a referral code"); return; }
     const valid = await validateReferralCode(code);
     if (valid) {
