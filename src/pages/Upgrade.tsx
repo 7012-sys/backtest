@@ -365,7 +365,7 @@ const Upgrade = () => {
                     <Crown className="h-3 w-3 text-accent" />
                     <span className="text-sm font-medium text-accent">Pro</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">₹499/month</span>
+                  <span className="text-xs text-muted-foreground">₹999/month</span>
                 </div>
               </div>
             </div>
