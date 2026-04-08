@@ -198,7 +198,7 @@ const Upgrade = () => {
           key: responseData.key_id,
           subscription_id: responseData.subscription_id,
           name: "Trade Strategy Backtester",
-          description: "Pro Plan - ₹499/month",
+          description: "Pro Plan - ₹999/month",
           handler: async function (response: any) {
             toast.success("Payment successful! Activating Pro plan...");
             // Verify payment server-side and activate subscription securely
