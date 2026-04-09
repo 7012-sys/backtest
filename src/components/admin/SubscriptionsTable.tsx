@@ -49,14 +49,27 @@ export const SubscriptionsTable = ({ subscriptions, loading, onUpdate }: Subscri
 
   const handlePlanChange = async (subscriptionId: string, newPlan: string) => {
     setUpdating(subscriptionId);
+    const updateData: Record<string, any> = { 
+      plan: newPlan, 
+      updated_at: new Date().toISOString() 
+    };
+    
+    // When upgrading to pro, set period dates and ensure active status
+    if (newPlan === "pro") {
+      updateData.status = "active";
+      updateData.current_period_start = new Date().toISOString();
+      updateData.current_period_end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    }
+    
     const { error } = await supabase
       .from("subscriptions")
-      .update({ plan: newPlan, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq("id", subscriptionId);
     
     setUpdating(null);
     if (error) {
-      toast.error("Failed to update plan");
+      console.error("Plan update error:", error);
+      toast.error("Failed to update plan: " + (error.message || "Unknown error"));
     } else {
       toast.success(`Plan updated to ${newPlan}`);
       onUpdate?.();
