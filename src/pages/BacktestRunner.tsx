@@ -441,7 +441,7 @@ const BacktestRunner = () => {
 
       const { error: insertError } = await supabase.from("backtests").insert([{
         user_id: user.id,
-        strategy_id: selectedStrategy,
+        strategy_id: dbStrategyId,
         symbol: dataSourceMode === "csv" ? (csvFileName || "CSV") : symbol,
         timeframe: dataSourceMode === "csv" && csvTimeframe ? csvTimeframe : timeframe,
         start_date: startDate,
