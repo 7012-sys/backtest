@@ -11,10 +11,12 @@ import {
   BarChart3, 
   Download, 
   HeadphonesIcon,
-  ArrowRight 
+  ArrowRight,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 
 const proFeatures = [
   {
@@ -90,6 +92,51 @@ const FloatingSparkle = ({ delay, x, y }: { delay: number; x: number; y: number 
 export default function UpgradeSuccess() {
   const navigate = useNavigate();
   const [showContent, setShowContent] = useState(false);
+  const [syncing, setSyncing] = useState(true);
+  const [proConfirmed, setProConfirmed] = useState(false);
+
+  // Poll for pro status to handle webhook delay
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 15;
+    const POLL_INTERVAL = 2000;
+
+    const pollSubscription = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setSyncing(false);
+        return;
+      }
+
+      while (!cancelled && attempts < MAX_ATTEMPTS) {
+        attempts++;
+        try {
+          const { data, error } = await supabase
+            .from("subscriptions")
+            .select("plan, status")
+            .eq("user_id", session.user.id)
+            .single();
+
+          if (!error && data?.plan === "pro" && data?.status === "active") {
+            setProConfirmed(true);
+            setSyncing(false);
+            return;
+          }
+        } catch (e) {
+          console.error("Poll error:", e);
+        }
+        await new Promise(r => setTimeout(r, POLL_INTERVAL));
+      }
+      if (!cancelled) {
+        // Even if polling times out, stop loading and show success
+        setSyncing(false);
+      }
+    };
+
+    pollSubscription();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     // Fire confetti on mount
@@ -177,12 +224,26 @@ export default function UpgradeSuccess() {
             transition={{ delay: 0.5 }}
             className="text-lg text-muted-foreground"
           >
-            Your account has been upgraded successfully. Here's what you've unlocked:
+            {syncing 
+              ? "Verifying your Pro status..." 
+              : "Your account has been upgraded successfully. Here's what you've unlocked:"}
           </motion.p>
         </motion.div>
 
+        {/* Syncing indicator */}
+        {syncing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center gap-2 text-muted-foreground"
+          >
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="text-sm">Activating your Pro plan...</span>
+          </motion.div>
+        )}
+
         {/* Features List */}
-        {showContent && (
+        {showContent && !syncing && (
           <Card className="border-emerald-500/20 bg-card/80 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -195,11 +256,11 @@ export default function UpgradeSuccess() {
                       type: "spring",
                       stiffness: 100,
                       damping: 15,
-                      delay: 0.6 + index * 0.1,
+                      delay: 0.1 + index * 0.1,
                     }}
                     className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <AnimatedCheckmark delay={0.8 + index * 0.1} />
+                    <AnimatedCheckmark delay={0.2 + index * 0.1} />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <feature.icon className="w-5 h-5 text-emerald-500" />
@@ -217,30 +278,34 @@ export default function UpgradeSuccess() {
         )}
 
         {/* CTA Button */}
-        <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="text-center"
-        >
-          <Button
-            size="lg"
-            onClick={() => navigate("/dashboard")}
-            className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-lg shadow-emerald-500/30 gap-2 px-8"
+        {!syncing && (
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-center"
           >
-            Start Building Strategies
-            <ArrowRight className="w-5 h-5" />
-          </Button>
+            <Button
+              size="lg"
+              onClick={() => navigate("/dashboard")}
+              className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-lg shadow-emerald-500/30 gap-2 px-8"
+            >
+              Start Building Strategies
+              <ArrowRight className="w-5 h-5" />
+            </Button>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-            className="text-sm text-muted-foreground mt-4"
-          >
-            Your Pro subscription is now active. Enjoy unlimited access!
-          </motion.p>
-        </motion.div>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="text-sm text-muted-foreground mt-4"
+            >
+              {proConfirmed 
+                ? "Your Pro subscription is now active. Enjoy unlimited access!" 
+                : "If your Pro status doesn't reflect immediately, please refresh or contact support."}
+            </motion.p>
+          </motion.div>
+        )}
       </div>
     </div>
   );
