@@ -37,24 +37,13 @@ serve(async (req) => {
       throw new Error("Invalid user token");
     }
 
-    // Parse request body for referral code
+    // Parse request body for referral code — ONLY use what the client explicitly sends
     let referralCode: string | null = null;
     try {
       const body = await req.json();
       referralCode = body?.referral_code?.trim()?.toUpperCase() || null;
     } catch {
       // No body or invalid JSON — no referral code
-    }
-
-    // Fallback to the stored referral on the user's profile when they signed up from a link
-    if (!referralCode) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("referred_by")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      referralCode = profile?.referred_by?.trim()?.toUpperCase() || null;
     }
 
     console.log("Creating order for user:", user.id, "referral:", referralCode);
