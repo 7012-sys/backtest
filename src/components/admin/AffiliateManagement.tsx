@@ -284,6 +284,7 @@ export const AffiliateManagement = () => {
                       <TableHead>Affiliate</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Method</TableHead>
+                      <TableHead>Payment Details</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -294,29 +295,50 @@ export const AffiliateManagement = () => {
                         <TableCell className="text-xs">{new Date(w.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>{w.profile?.display_name || w.profile?.email || "Unknown"}</TableCell>
                         <TableCell className="font-medium">₹{w.amount.toLocaleString()}</TableCell>
-                        <TableCell className="text-xs">{w.payment_method} — {w.payment_details?.upi || "-"}</TableCell>
+                        <TableCell className="text-xs uppercase">{w.payment_method}</TableCell>
+                        <TableCell>
+                          {w.payment_method === "upi" && w.payment_details?.upi && (
+                            <div className="text-xs">
+                              <span className="text-muted-foreground">UPI: </span>
+                              <span className="font-mono font-medium select-all">{w.payment_details.upi}</span>
+                            </div>
+                          )}
+                          {w.payment_method === "bank" && (
+                            <div className="text-xs space-y-0.5">
+                              {w.payment_details?.bank_name && <div><span className="text-muted-foreground">Bank: </span>{w.payment_details.bank_name}</div>}
+                              {w.payment_details?.account && <div><span className="text-muted-foreground">A/C: </span><span className="font-mono select-all">{w.payment_details.account}</span></div>}
+                              {w.payment_details?.ifsc && <div><span className="text-muted-foreground">IFSC: </span><span className="font-mono select-all">{w.payment_details.ifsc}</span></div>}
+                            </div>
+                          )}
+                          {!w.payment_details?.upi && !w.payment_details?.bank_name && (
+                            <span className="text-xs text-muted-foreground">No details</span>
+                          )}
+                        </TableCell>
                         <TableCell>{statusBadge(w.status)}</TableCell>
                         <TableCell>
                           {w.status === "pending" && (
                             <div className="flex gap-1">
-                              <Button size="sm" variant="ghost" className="text-green-600 h-7" onClick={() => handleWithdrawalAction(w.id, "approved")}>
-                                <CheckCircle2 className="h-3.5 w-3.5" />
+                              <Button size="sm" variant="ghost" className="text-green-600 h-7" onClick={() => handleWithdrawalAction(w.id, "approved", w)}>
+                                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
                               </Button>
-                              <Button size="sm" variant="ghost" className="text-red-600 h-7" onClick={() => handleWithdrawalAction(w.id, "rejected")}>
-                                <XCircle className="h-3.5 w-3.5" />
+                              <Button size="sm" variant="ghost" className="text-destructive h-7" onClick={() => handleWithdrawalAction(w.id, "rejected", w)}>
+                                <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
                               </Button>
                             </div>
                           )}
                           {w.status === "approved" && (
-                            <Button size="sm" variant="ghost" className="text-accent h-7" onClick={() => handleWithdrawalAction(w.id, "paid")}>
+                            <Button size="sm" variant="ghost" className="text-accent h-7" onClick={() => handleWithdrawalAction(w.id, "paid", w)}>
                               Mark Paid
                             </Button>
+                          )}
+                          {(w.status === "paid" || w.status === "rejected") && (
+                            <span className="text-xs text-muted-foreground">{w.processed_at ? new Date(w.processed_at).toLocaleDateString() : "—"}</span>
                           )}
                         </TableCell>
                       </TableRow>
                     ))}
                     {withdrawals.length === 0 && (
-                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No withdrawal requests</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No withdrawal requests</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
