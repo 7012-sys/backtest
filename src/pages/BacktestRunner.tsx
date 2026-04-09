@@ -365,6 +365,10 @@ const BacktestRunner = () => {
     const entryRules: StrategyRule[] = normalizeAIRules(strategy.rules?.entry || []);
     const exitRules: StrategyRule[] = normalizeAIRules(strategy.rules?.exit || []);
 
+    setRunning(true);
+    setResults(null);
+    setWalkForwardResult(null);
+
     // If community strategy, save to user's strategies first to get a real DB ID
     let dbStrategyId = selectedStrategy;
     if (selectedStrategy.startsWith("community_")) {
@@ -381,13 +385,10 @@ const BacktestRunner = () => {
         return;
       }
       dbStrategyId = saved.id;
-      // Update the virtual strategy with the real ID
       setStrategies(prev => prev.map(s => s.id === selectedStrategy ? { ...s, id: dbStrategyId } : s));
       setSelectedStrategy(dbStrategyId);
       toast.info("Strategy saved to your account");
     }
-    setResults(null);
-    setWalkForwardResult(null);
 
     try {
       let priceData: OHLCV[];
