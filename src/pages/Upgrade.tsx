@@ -183,7 +183,7 @@ const Upgrade = () => {
   };
 
   const discountedPrice = referralApplied
-    ? Math.round(originalPrice * (1 - discountPercent / 100))
+    ? Math.floor(originalPrice * (1 - discountPercent / 100))
     : originalPrice;
 
   useEffect(() => {
