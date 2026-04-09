@@ -5,10 +5,11 @@ const REFERRAL_COOKIE_KEY = "tradetest_ref";
 const REFERRAL_SOURCE_KEY = "tradetest_ref_source";
 const REFERRAL_EXPIRY_DAYS = 30;
 
-export const setReferralCookie = (code: string) => {
+export const setReferralCookie = (code: string, source: "link" | "manual" = "manual") => {
   const expiry = new Date();
   expiry.setDate(expiry.getDate() + REFERRAL_EXPIRY_DAYS);
   document.cookie = `${REFERRAL_COOKIE_KEY}=${encodeURIComponent(code)};expires=${expiry.toUTCString()};path=/;SameSite=Lax`;
+  document.cookie = `${REFERRAL_SOURCE_KEY}=${source};expires=${expiry.toUTCString()};path=/;SameSite=Lax`;
 };
 
 export const getReferralCode = (): string | null => {
@@ -16,8 +17,14 @@ export const getReferralCode = (): string | null => {
   return match ? decodeURIComponent(match[1]) : null;
 };
 
+export const getReferralSource = (): string | null => {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${REFERRAL_SOURCE_KEY}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 export const clearReferralCookie = () => {
   document.cookie = `${REFERRAL_COOKIE_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax`;
+  document.cookie = `${REFERRAL_SOURCE_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax`;
 };
 
 /**
