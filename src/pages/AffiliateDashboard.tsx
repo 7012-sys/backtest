@@ -13,10 +13,26 @@ import { toast } from "sonner";
 import { 
   Copy, Link2, Users, IndianRupee, TrendingUp, MousePointer, 
   Wallet, Award, Star, Zap, ArrowUpRight, Edit3, CheckCircle2,
-  History, Receipt
+  History, Receipt, Bell, X
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  is_read: boolean;
+  created_at: string;
+}
 
 const AffiliateDashboard = () => {
   const navigate = useNavigate();
@@ -28,6 +44,8 @@ const AffiliateDashboard = () => {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [commissions, setCommissions] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotification, setShowNotification] = useState<Notification | null>(null);
 
   const { 
     affiliate, settings, dailyClicks, loading: affLoading, isAffiliate,
@@ -46,26 +64,33 @@ const AffiliateDashboard = () => {
     if (affiliate?.payment_upi) setUpi(affiliate.payment_upi);
   }, [affiliate]);
 
-  // Fetch commissions and withdrawals
+  // Fetch commissions, withdrawals, and notifications
   useEffect(() => {
     if (!affiliate) return;
     const fetchHistory = async () => {
-      const [{ data: comms }, { data: wds }] = await Promise.all([
+      const [{ data: comms }, { data: wds }, { data: notifs }] = await Promise.all([
         supabase.from("commissions").select("*").eq("affiliate_id", affiliate.id).order("created_at", { ascending: false }),
         supabase.from("withdrawal_requests").select("*").eq("affiliate_id", affiliate.id).order("created_at", { ascending: false }),
+        supabase.from("affiliate_notifications").select("*").eq("user_id", affiliate.user_id).order("created_at", { ascending: false }),
       ]);
       setCommissions(comms || []);
       setWithdrawals(wds || []);
+      setNotifications((notifs as Notification[]) || []);
+
+      // Show first unread notification as popup
+      const unread = (notifs as Notification[] || []).find(n => !n.is_read);
+      if (unread) setShowNotification(unread);
     };
     fetchHistory();
   }, [affiliate]);
 
-  const handleBecomeAffiliate = async () => {
-    const result = await becomeAffiliate();
-    if (result?.error) {
-      toast.error("Failed to join affiliate program");
-    } else {
-      toast.success("Welcome to the Affiliate Program! 🎉");
+  const handleDismissNotification = async () => {
+    if (showNotification) {
+      await supabase.from("affiliate_notifications").update({ is_read: true }).eq("id", showNotification.id);
+      setShowNotification(null);
+      // Show next unread
+      const nextUnread = notifications.find(n => !n.is_read && n.id !== showNotification.id);
+      if (nextUnread) setTimeout(() => setShowNotification(nextUnread), 300);
     }
   };
 
@@ -97,6 +122,10 @@ const AffiliateDashboard = () => {
   };
 
   const handleSavePayment = async () => {
+    if (!upi.trim() || !upi.includes("@")) {
+      toast.error("Please enter a valid UPI ID (e.g. name@bank)");
+      return;
+    }
     const result = await updatePaymentInfo({ payment_upi: upi });
     if (result?.error) {
       toast.error("Failed to save payment info");
@@ -106,6 +135,12 @@ const AffiliateDashboard = () => {
   };
 
   const handleWithdraw = async () => {
+    // UPI validation
+    if (!affiliate?.payment_upi && !upi.includes("@")) {
+      toast.error("UPI ID is required to proceed. Please save your UPI first.");
+      return;
+    }
+
     const amt = Number(withdrawAmount);
     if (!amt || amt < (settings?.min_withdrawal || 1000)) {
       toast.error(`Minimum withdrawal is ₹${settings?.min_withdrawal || 1000}`);
@@ -115,12 +150,22 @@ const AffiliateDashboard = () => {
       toast.error("Insufficient pending earnings");
       return;
     }
-    const result = await requestWithdrawal(amt, "upi", { upi });
+
+    // Check for pending/processing withdrawal
+    const hasPending = withdrawals.some(w => w.status === "pending" || w.status === "approved");
+    if (hasPending) {
+      toast.error("You already have a pending withdrawal request. Please wait for it to be processed.");
+      return;
+    }
+
+    const upiToUse = affiliate?.payment_upi || upi;
+    const result = await requestWithdrawal(amt, "upi", { upi: upiToUse });
     if (result?.error) {
       toast.error("Failed to submit withdrawal request");
     } else {
       toast.success("Withdrawal request submitted!");
       setWithdrawAmount("");
+      refresh();
     }
   };
 
@@ -130,11 +175,18 @@ const AffiliateDashboard = () => {
 
   const topDay = dailyClicks.reduce((max, d) => d.clicks > max.clicks ? d : max, { date: "-", clicks: 0 });
 
+  // Calculate processing amount
+  const processingAmount = withdrawals
+    .filter(w => w.status === "pending" || w.status === "approved")
+    .reduce((sum, w) => sum + w.amount, 0);
+
+  const availableBalance = Math.max(0, (affiliate?.pending_earnings || 0) - processingAmount);
+  const hasPendingRequest = withdrawals.some(w => w.status === "pending" || w.status === "approved");
+
   if (loading || affLoading) {
     return <AppLayout loading={true} title="Affiliate"><div /></AppLayout>;
   }
 
-  // Not an affiliate - redirect
   if (!isAffiliate) {
     return (
       <AppLayout showBack backTo="/dashboard" title="Access Denied">
@@ -154,8 +206,40 @@ const AffiliateDashboard = () => {
     );
   }
 
+  const statusBadgeWithdrawal = (status: string) => {
+    const map: Record<string, { variant: "default" | "secondary" | "outline" | "destructive"; className: string }> = {
+      pending: { variant: "outline", className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30" },
+      approved: { variant: "secondary", className: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
+      paid: { variant: "default", className: "bg-green-500/10 text-green-600 border-green-500/30" },
+      rejected: { variant: "destructive", className: "" },
+    };
+    const config = map[status] || { variant: "outline" as const, className: "" };
+    return <Badge variant={config.variant} className={`text-xs capitalize ${config.className}`}>{status}</Badge>;
+  };
+
   return (
     <AppLayout showBack backTo="/dashboard" title="Affiliate Dashboard" subtitle="Track your referrals & earnings">
+      {/* Notification Popup */}
+      <Dialog open={!!showNotification} onOpenChange={() => handleDismissNotification()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-accent" />
+              {showNotification?.title}
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-sm">
+              {showNotification?.message}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-between items-center pt-2">
+            <span className="text-xs text-muted-foreground">
+              {showNotification ? new Date(showNotification.created_at).toLocaleString() : ""}
+            </span>
+            <Button size="sm" onClick={handleDismissNotification}>Got it</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="space-y-6">
         {/* Referral Link Card */}
         <Card className="border-accent/20">
@@ -231,10 +315,13 @@ const AffiliateDashboard = () => {
             <CardContent className="py-4">
               <div className="flex items-center gap-2 mb-2">
                 <Wallet className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Pending</span>
+                <span className="text-xs text-muted-foreground">Pending Balance</span>
               </div>
               <p className="text-2xl font-bold">₹{affiliate!.pending_earnings.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">₹{affiliate!.withdrawn_earnings.toLocaleString()} withdrawn</p>
+              {processingAmount > 0 && (
+                <p className="text-xs text-yellow-600">₹{processingAmount.toLocaleString()} processing</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -246,6 +333,14 @@ const AffiliateDashboard = () => {
             <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
             <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
             <TabsTrigger value="payment">Payment Info</TabsTrigger>
+            <TabsTrigger value="notifications" className="relative">
+              Notifications
+              {notifications.filter(n => !n.is_read).length > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center">
+                  {notifications.filter(n => !n.is_read).length}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics">
@@ -352,7 +447,7 @@ const AffiliateDashboard = () => {
                         <TableRow>
                           <TableHead>Date</TableHead>
                           <TableHead>Amount</TableHead>
-                          <TableHead>Method</TableHead>
+                          <TableHead>UPI ID</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Processed</TableHead>
                         </TableRow>
@@ -362,12 +457,8 @@ const AffiliateDashboard = () => {
                           <TableRow key={w.id}>
                             <TableCell className="text-xs">{new Date(w.created_at).toLocaleDateString()}</TableCell>
                             <TableCell className="font-semibold">₹{w.amount.toLocaleString()}</TableCell>
-                            <TableCell className="uppercase text-xs">{w.payment_method}</TableCell>
-                            <TableCell>
-                              <Badge variant={w.status === "completed" ? "default" : w.status === "rejected" ? "destructive" : "outline"} className="text-xs capitalize">
-                                {w.status}
-                              </Badge>
-                            </TableCell>
+                            <TableCell className="text-xs font-mono">{w.payment_details?.upi || "—"}</TableCell>
+                            <TableCell>{statusBadgeWithdrawal(w.status)}</TableCell>
                             <TableCell className="text-xs">{w.processed_at ? new Date(w.processed_at).toLocaleDateString() : "—"}</TableCell>
                           </TableRow>
                         ))}
@@ -386,21 +477,65 @@ const AffiliateDashboard = () => {
                 <CardDescription>Minimum withdrawal: ₹{settings?.min_withdrawal || 1000}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-4 text-sm">
-                  <div className="flex-1 p-3 rounded-lg bg-muted">
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="p-3 rounded-lg bg-muted">
                     <p className="text-muted-foreground text-xs">Available</p>
-                    <p className="font-bold text-lg">₹{affiliate!.pending_earnings.toLocaleString()}</p>
+                    <p className="font-bold text-lg">₹{availableBalance.toLocaleString()}</p>
                   </div>
-                  <div className="flex-1 p-3 rounded-lg bg-muted">
+                  <div className="p-3 rounded-lg bg-muted">
                     <p className="text-muted-foreground text-xs">Total Withdrawn</p>
                     <p className="font-bold text-lg">₹{affiliate!.withdrawn_earnings.toLocaleString()}</p>
                   </div>
+                  <div className="p-3 rounded-lg bg-muted">
+                    <p className="text-muted-foreground text-xs">Processing</p>
+                    <p className="font-bold text-lg text-yellow-600">₹{processingAmount.toLocaleString()}</p>
+                  </div>
                 </div>
+
+                {!affiliate?.payment_upi && (
+                  <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
+                    ⚠️ UPI ID is required to proceed. Please save your UPI ID in the Payment Info tab first.
+                  </div>
+                )}
+
+                {hasPendingRequest && (
+                  <div className="p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5 text-sm text-yellow-700">
+                    ⏳ You have an active withdrawal request being processed. Please wait for it to complete.
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label>Amount (₹)</Label>
-                  <Input type="number" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder={`Min ₹${settings?.min_withdrawal || 1000}`} />
+                  <Input 
+                    type="number" 
+                    value={withdrawAmount} 
+                    onChange={(e) => setWithdrawAmount(e.target.value)} 
+                    placeholder={`Min ₹${settings?.min_withdrawal || 1000}`}
+                    disabled={!affiliate?.payment_upi || hasPendingRequest}
+                  />
                 </div>
-                <Button onClick={handleWithdraw} disabled={!withdrawAmount || Number(withdrawAmount) < (settings?.min_withdrawal || 1000)} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+
+                <div className="space-y-2">
+                  <Label>UPI ID</Label>
+                  <Input 
+                    value={affiliate?.payment_upi || ""} 
+                    disabled 
+                    className="font-mono bg-muted" 
+                    placeholder="Not set — go to Payment Info tab"
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleWithdraw} 
+                  disabled={
+                    !affiliate?.payment_upi || 
+                    hasPendingRequest || 
+                    !withdrawAmount || 
+                    Number(withdrawAmount) < (settings?.min_withdrawal || 1000) ||
+                    Number(withdrawAmount) > availableBalance
+                  } 
+                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                >
                   <ArrowUpRight className="h-4 w-4 mr-2" /> Request Withdrawal
                 </Button>
               </CardContent>
@@ -415,12 +550,65 @@ const AffiliateDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>UPI ID</Label>
-                  <Input value={upi} onChange={(e) => setUpi(e.target.value)} placeholder="yourname@upi" />
+                  <Label>UPI ID <span className="text-destructive">*</span></Label>
+                  <Input value={upi} onChange={(e) => setUpi(e.target.value)} placeholder="yourname@bank" />
+                  {upi && !upi.includes("@") && (
+                    <p className="text-xs text-destructive">Please enter a valid UPI ID (e.g. name@bank)</p>
+                  )}
                 </div>
-                <Button onClick={handleSavePayment} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                <Button 
+                  onClick={handleSavePayment} 
+                  disabled={!upi.includes("@")}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                >
                   <CheckCircle2 className="h-4 w-4 mr-2" /> Save Payment Info
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-accent" /> Notifications
+                </CardTitle>
+                <CardDescription>Messages from admin</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {notifications.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No notifications yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {notifications.map((n) => (
+                      <div key={n.id} className={`p-4 rounded-lg border ${n.is_read ? "bg-muted/50 border-border" : "bg-accent/5 border-accent/20"}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm">{n.title}</p>
+                              {!n.is_read && <Badge variant="default" className="text-[10px] h-4">New</Badge>}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{n.message}</p>
+                            <p className="text-xs text-muted-foreground mt-2">{new Date(n.created_at).toLocaleString()}</p>
+                          </div>
+                          {!n.is_read && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 text-xs"
+                              onClick={async () => {
+                                await supabase.from("affiliate_notifications").update({ is_read: true }).eq("id", n.id);
+                                setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x));
+                              }}
+                            >
+                              Mark Read
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
