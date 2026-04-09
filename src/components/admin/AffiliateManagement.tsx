@@ -138,10 +138,24 @@ export const AffiliateManagement = () => {
     if (!error) { toast.success(settings.is_enabled ? "Program disabled" : "Program enabled"); fetchAll(); }
   };
 
-  const handleWithdrawalAction = async (id: string, status: "approved" | "paid" | "rejected") => {
+  const handleWithdrawalAction = async (id: string, status: "approved" | "paid" | "rejected", withdrawal?: WithdrawalRequest) => {
     const { error } = await supabase.from("withdrawal_requests").update({ status, processed_at: new Date().toISOString() }).eq("id", id);
-    if (!error) { toast.success(`Withdrawal ${status}`); fetchAll(); }
-    else toast.error("Failed to update withdrawal");
+    if (error) { toast.error("Failed to update withdrawal"); return; }
+
+    // When marking as paid, update affiliate earnings
+    if (status === "paid" && withdrawal) {
+      const affiliate = affiliates.find(a => a.id === withdrawal.affiliate_id);
+      if (affiliate) {
+        await supabase.from("affiliates").update({
+          withdrawn_earnings: affiliate.withdrawn_earnings + withdrawal.amount,
+          pending_earnings: Math.max(0, affiliate.pending_earnings - withdrawal.amount),
+          updated_at: new Date().toISOString(),
+        }).eq("id", withdrawal.affiliate_id);
+      }
+    }
+
+    toast.success(`Withdrawal ${status}`);
+    fetchAll();
   };
 
   const handleSuspendAffiliate = async (id: string, currentStatus: string) => {
