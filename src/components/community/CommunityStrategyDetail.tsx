@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, TrendingUp, TrendingDown, Calendar, ThumbsUp, Trash2 } from "lucide-react";
+import { Play, TrendingUp, TrendingDown, Calendar, ThumbsUp, Trash2, Crown, Lock } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
@@ -27,9 +27,10 @@ interface Props {
   isLiking?: boolean;
   isAdmin?: boolean;
   onAdminDelete?: () => void;
+  isPro?: boolean;
 }
 
-export const CommunityStrategyDetail = ({ strategy, open, onClose, onApply, likeCount = 0, isLiked = false, onToggleLike, isLiking = false, isAdmin = false, onAdminDelete }: Props) => {
+export const CommunityStrategyDetail = ({ strategy, open, onClose, onApply, likeCount = 0, isLiked = false, onToggleLike, isLiking = false, isAdmin = false, onAdminDelete, isPro = false }: Props) => {
   const metrics = strategy.performance_metrics || {};
   const curve = Array.isArray(strategy.equity_curve) ? strategy.equity_curve : [];
   const isProfitable = (metrics.netPnl || 0) > 0;
@@ -152,9 +153,17 @@ export const CommunityStrategyDetail = ({ strategy, open, onClose, onApply, like
 
           {/* Actions */}
           <div className="flex gap-2">
-            <Button onClick={onApply} className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
-              <Play className="h-4 w-4 mr-2" /> Apply Strategy to Backtest
-            </Button>
+            {isPro ? (
+              <Button onClick={onApply} className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
+                <Play className="h-4 w-4 mr-2" /> Apply Strategy to Backtest
+              </Button>
+            ) : (
+              <Button onClick={onApply} variant="outline" className="flex-1 opacity-80">
+                <Lock className="h-4 w-4 mr-2" />
+                Apply Strategy
+                <Crown className="h-4 w-4 ml-2 text-accent" />
+              </Button>
+            )}
             {isAdmin && onAdminDelete && (
               <Button variant="destructive" onClick={onAdminDelete}>
                 <Trash2 className="h-4 w-4 mr-2" /> Delete
