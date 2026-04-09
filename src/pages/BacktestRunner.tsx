@@ -182,6 +182,47 @@ const BacktestRunner = () => {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [user]);
 
+  // Load community strategy from sessionStorage
+  useEffect(() => {
+    const raw = sessionStorage.getItem("community_strategy");
+    if (raw) {
+      try {
+        const communityStrategy = JSON.parse(raw);
+        sessionStorage.removeItem("community_strategy");
+        
+        const virtualStrategy: Strategy = {
+          id: "community_" + Date.now(),
+          name: communityStrategy.name || "Community Strategy",
+          description: "Applied from Community Strategies",
+          current_version: 1,
+          is_ai_generated: false,
+          rules: communityStrategy.rules || {},
+        };
+        
+        setStrategies(prev => {
+          // Avoid duplicates
+          const filtered = prev.filter(s => !s.id.startsWith("community_"));
+          return [virtualStrategy, ...filtered];
+        });
+        setSelectedStrategy(virtualStrategy.id);
+        
+        // Set dataset if available
+        if (communityStrategy.dataset) {
+          const matchingDataset = ALL_DATASETS.find(d => d.value === communityStrategy.dataset);
+          if (matchingDataset) {
+            setSymbol(communityStrategy.dataset);
+            setDataSourceMode("market");
+          }
+        }
+        
+        toast.success(`Strategy "${virtualStrategy.name}" loaded from community`);
+      } catch (e) {
+        console.error("Failed to parse community strategy:", e);
+        sessionStorage.removeItem("community_strategy");
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const strategyId = searchParams.get("strategy");
     if (strategyId && strategies.length > 0) setSelectedStrategy(strategyId);
@@ -195,11 +236,14 @@ const BacktestRunner = () => {
       .order("created_at", { ascending: false });
     if (error) { toast.error("Failed to load strategies"); return; }
     const list = data || [];
-    setStrategies(list);
-    if (list.length === 0) {
+    // Preserve any community strategy already loaded
+    const communityStrategies = strategies.filter(s => s.id.startsWith("community_"));
+    const merged = [...communityStrategies, ...list];
+    setStrategies(merged);
+    if (merged.length === 0) {
       setSelectedStrategy("");
-    } else if (!selectedStrategy || !list.find(s => s.id === selectedStrategy)) {
-      setSelectedStrategy(list[0].id);
+    } else if (!selectedStrategy || !merged.find(s => s.id === selectedStrategy)) {
+      setSelectedStrategy(merged[0].id);
     }
   };
 
@@ -325,6 +369,27 @@ const BacktestRunner = () => {
     setResults(null);
     setWalkForwardResult(null);
 
+    // If community strategy, save to user's strategies first to get a real DB ID
+    let dbStrategyId = selectedStrategy;
+    if (selectedStrategy.startsWith("community_")) {
+      const { data: saved, error: saveErr } = await supabase.from("strategies").insert({
+        user_id: user.id,
+        name: strategy.name,
+        description: strategy.description || "Imported from Community",
+        rules: strategy.rules,
+        is_ai_generated: false,
+      }).select("id").single();
+      if (saveErr || !saved) {
+        toast.error("Failed to save community strategy");
+        setRunning(false);
+        return;
+      }
+      dbStrategyId = saved.id;
+      setStrategies(prev => prev.map(s => s.id === selectedStrategy ? { ...s, id: dbStrategyId } : s));
+      setSelectedStrategy(dbStrategyId);
+      toast.info("Strategy saved to your account");
+    }
+
     try {
       let priceData: OHLCV[];
       if (dataSourceMode === "csv" && csvData) {
@@ -376,7 +441,7 @@ const BacktestRunner = () => {
 
       const { error: insertError } = await supabase.from("backtests").insert([{
         user_id: user.id,
-        strategy_id: selectedStrategy,
+        strategy_id: dbStrategyId,
         symbol: dataSourceMode === "csv" ? (csvFileName || "CSV") : symbol,
         timeframe: dataSourceMode === "csv" && csvTimeframe ? csvTimeframe : timeframe,
         start_date: startDate,
