@@ -6,8 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BASE_PRICE_PAISE = 99900; // ₹999 in paise
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -16,12 +14,19 @@ serve(async (req) => {
   try {
     const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID");
     const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET");
+    const RAZORPAY_PLAN_ID = Deno.env.get("RAZORPAY_PLAN_ID");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
       throw new Error("Razorpay credentials not configured");
     }
+
+    if (!RAZORPAY_PLAN_ID) {
+      throw new Error("Razorpay Plan ID not configured. Please add RAZORPAY_PLAN_ID secret.");
+    }
+
+    console.log(`RAZORPAY_PLAN_ID length: ${RAZORPAY_PLAN_ID.length}, prefix: ${RAZORPAY_PLAN_ID.substring(0, 5)}`);
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -32,92 +37,107 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
+    
     if (userError || !user) {
       throw new Error("Invalid user token");
     }
 
-    // Parse request body for referral code — ONLY use what the client explicitly sends
-    let referralCode: string | null = null;
-    try {
-      const body = await req.json();
-      referralCode = body?.referral_code?.trim()?.toUpperCase() || null;
-    } catch {
-      // No body or invalid JSON — no referral code
-    }
-
-    console.log("Creating order for user:", user.id, "referral:", referralCode);
-
-    let finalPricePaise = BASE_PRICE_PAISE;
-    let discountPercent = 0;
-    let affiliateId: string | null = null;
-
-    // Server-side referral code validation
-    if (referralCode) {
-      const { data: affiliate } = await supabase
-        .from("affiliates")
-        .select("id, user_id, status")
-        .eq("referral_code", referralCode)
-        .eq("status", "active")
-        .single();
-
-      if (affiliate && affiliate.user_id !== user.id) {
-        // Valid referral, not self-referral — fetch discount
-        const { data: settings } = await supabase
-          .from("affiliate_settings")
-          .select("discount_percent, is_enabled")
-          .limit(1)
-          .single();
-
-        if (settings?.is_enabled && settings.discount_percent > 0) {
-          discountPercent = settings.discount_percent;
-          finalPricePaise = Math.round(BASE_PRICE_PAISE * (1 - discountPercent / 100));
-          affiliateId = affiliate.id;
-          console.log(`Discount applied: ${discountPercent}%, final: ${finalPricePaise} paise`);
-        }
-      } else {
-        console.log("Invalid referral: self-referral or not found");
-      }
-    }
+    console.log("Creating subscription for user:", user.id);
 
     const credentials = btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
 
-    // Create a Razorpay ORDER (not subscription) so we can set custom amount
-    const orderResponse = await fetch("https://api.razorpay.com/v1/orders", {
+    // Check if user already has a Razorpay customer ID
+    let customerId: string;
+    
+    const { data: existingSub } = await supabase
+      .from("subscriptions")
+      .select("razorpay_customer_id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (existingSub?.razorpay_customer_id) {
+      customerId = existingSub.razorpay_customer_id;
+    } else {
+      const customerResponse = await fetch("https://api.razorpay.com/v1/customers", {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${credentials}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: user.email?.split("@")[0] || "User",
+          email: user.email,
+        }),
+      });
+
+      const customerData = await customerResponse.json();
+
+      if (!customerResponse.ok) {
+        // If customer already exists, fetch existing customer by email
+        if (customerData?.error?.description?.includes("already exists")) {
+          console.log("Customer already exists, fetching existing customer...");
+          const searchResponse = await fetch(
+            `https://api.razorpay.com/v1/customers?email=${encodeURIComponent(user.email!)}`,
+            {
+              headers: { "Authorization": `Basic ${credentials}` },
+            }
+          );
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            if (searchData.items && searchData.items.length > 0) {
+              customerId = searchData.items[0].id;
+            } else {
+              throw new Error("Could not find existing Razorpay customer");
+            }
+          } else {
+            throw new Error("Failed to search for existing Razorpay customer");
+          }
+        } else {
+          console.error("Failed to create customer:", JSON.stringify(customerData));
+          throw new Error("Failed to create Razorpay customer");
+        }
+      } else {
+        customerId = customerData.id;
+      }
+    }
+
+    // Create subscription using the plan ID from secrets
+    const subscriptionResponse = await fetch("https://api.razorpay.com/v1/subscriptions", {
       method: "POST",
       headers: {
         "Authorization": `Basic ${credentials}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        amount: finalPricePaise,
-        currency: "INR",
-        receipt: `pro_${user.id.substring(0, 8)}_${Date.now()}`,
+        plan_id: RAZORPAY_PLAN_ID,
+        customer_id: customerId,
+        total_count: 12,
+        quantity: 1,
+        customer_notify: 1,
         notes: {
           user_id: user.id,
-          plan_type: "pro_monthly",
-          referral_code: referralCode || "",
-          affiliate_id: affiliateId || "",
-          discount_percent: discountPercent,
-          original_amount: BASE_PRICE_PAISE,
+          plan_type: "monthly",
+          amount: 499,
         },
       }),
     });
 
-    if (!orderResponse.ok) {
-      const errorData = await orderResponse.json().catch(() => ({}));
-      console.error("Failed to create order:", JSON.stringify(errorData));
-      throw new Error(`Razorpay error: ${errorData?.error?.description || "Unknown error"}`);
+    if (!subscriptionResponse.ok) {
+      const errorData = await subscriptionResponse.json().catch(() => ({}));
+      console.error("Failed to create subscription:", JSON.stringify(errorData));
+      const razorpayMsg = errorData?.error?.description || "Unknown Razorpay error";
+      throw new Error(`Razorpay error: ${razorpayMsg}`);
     }
 
-    const order = await orderResponse.json();
-    console.log("Created order:", order.id, "amount:", order.amount);
+    const subscription = await subscriptionResponse.json();
+    console.log("Created subscription:", subscription.id);
 
-    // Store order info on the subscription record
+    // Store the razorpay IDs on the user's subscription record
     await supabase
       .from("subscriptions")
       .update({
-        razorpay_subscription_id: order.id, // reuse column for order_id
+        razorpay_customer_id: customerId,
+        razorpay_subscription_id: subscription.id,
         status: "pending",
       })
       .eq("user_id", user.id);
@@ -126,13 +146,9 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         data: {
-          order_id: order.id,
-          amount: order.amount,
-          currency: order.currency,
+          subscription_id: subscription.id,
+          short_url: subscription.short_url,
           key_id: RAZORPAY_KEY_ID,
-          discount_percent: discountPercent,
-          referral_code: referralCode,
-          affiliate_id: affiliateId,
         },
       }),
       {

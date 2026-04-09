@@ -120,13 +120,13 @@ export const PricingSection = () => {
 
             <div className="mb-6">
               <h3 className="text-xl font-semibold font-heading text-primary-foreground mb-2">Pro</h3>
-              <div className="text-lg line-through text-primary-foreground/50">₹1,999</div>
+              <div className="text-lg line-through text-primary-foreground/50">₹999</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold font-heading text-primary-foreground">₹999</span>
+                <span className="text-4xl font-bold font-heading text-primary-foreground">₹499</span>
                 <span className="text-primary-foreground/70">/month</span>
               </div>
               <p className="text-sm mt-2 text-primary-foreground/80">
-                🎉 Get 50% OFF using a referral code!
+                For serious learners & researchers
               </p>
             </div>
 

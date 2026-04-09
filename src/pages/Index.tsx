@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useReferralDetection } from "@/hooks/useReferral";
 import { Header } from "@/components/landing/Header";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
@@ -15,7 +14,6 @@ import { ArrowRight } from "lucide-react";
 const Index = () => {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
-  const { referralCode, discount } = useReferralDetection();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {

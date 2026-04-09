@@ -3,24 +3,9 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Settings, LogOut, ArrowLeft, Crown, Link2 } from "lucide-react";
+import { Settings, LogOut, ArrowLeft, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
-
-const useAffiliateRole = (userId: string | undefined) => {
-  const [isAffiliate, setIsAffiliate] = useState(false);
-  useEffect(() => {
-    if (!userId) return;
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "affiliate")
-      .maybeSingle()
-      .then(({ data }) => setIsAffiliate(!!data));
-  }, [userId]);
-  return isAffiliate;
-};
 
 interface AppHeaderProps {
   showBack?: boolean;
@@ -42,7 +27,6 @@ export const AppHeader = ({
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>();
   const { isPro, isLoading, isExpired } = useSubscription(userId);
-  const isAffiliateUser = useAffiliateRole(userId);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -100,19 +84,6 @@ export const AppHeader = ({
             >
               <Crown className="h-3.5 w-3.5" />
               Upgrade to Pro
-            </Button>
-          )}
-          
-          {/* Affiliate Link - only for users with affiliate role */}
-          {userId && isAffiliateUser && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-foreground"
-              onClick={() => navigate("/affiliate")}
-              title="Affiliate Program"
-            >
-              <Link2 className="h-5 w-5" />
             </Button>
           )}
           

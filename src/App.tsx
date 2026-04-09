@@ -5,9 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { ReferralTracker } from "@/components/ReferralTracker";
 import Index from "./pages/Index";
 
+// Lazy load all non-landing pages to reduce initial bundle size
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Demo = lazy(() => import("./pages/Demo"));
@@ -29,7 +29,6 @@ const Refund = lazy(() => import("./pages/legal/Refund"));
 const Disclaimer = lazy(() => import("./pages/legal/Disclaimer"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CommunityStrategies = lazy(() => import("./pages/CommunityStrategies"));
-const AffiliateDashboard = lazy(() => import("./pages/AffiliateDashboard"));
 
 const queryClient = new QueryClient();
 
@@ -46,7 +45,6 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <ReferralTracker />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -66,11 +64,11 @@ const App = () => (
               <Route path="/strategies" element={<Strategies />} />
               <Route path="/compare-strategies" element={<StrategyComparison />} />
               <Route path="/community-strategies" element={<CommunityStrategies />} />
-              <Route path="/affiliate" element={<AffiliateDashboard />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/refund-policy" element={<Refund />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
