@@ -689,25 +689,19 @@ export type Database = {
           affiliate_id: string
           clicked_at: string
           id: string
-          ip_address: string | null
           referral_code: string
-          user_agent: string | null
         }
         Insert: {
           affiliate_id: string
           clicked_at?: string
           id?: string
-          ip_address?: string | null
           referral_code: string
-          user_agent?: string | null
         }
         Update: {
           affiliate_id?: string
           clicked_at?: string
           id?: string
-          ip_address?: string | null
           referral_code?: string
-          user_agent?: string | null
         }
         Relationships: [
           {
