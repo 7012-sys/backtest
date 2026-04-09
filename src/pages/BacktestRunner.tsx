@@ -182,6 +182,47 @@ const BacktestRunner = () => {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [user]);
 
+  // Load community strategy from sessionStorage
+  useEffect(() => {
+    const raw = sessionStorage.getItem("community_strategy");
+    if (raw) {
+      try {
+        const communityStrategy = JSON.parse(raw);
+        sessionStorage.removeItem("community_strategy");
+        
+        const virtualStrategy: Strategy = {
+          id: "community_" + Date.now(),
+          name: communityStrategy.name || "Community Strategy",
+          description: "Applied from Community Strategies",
+          current_version: 1,
+          is_ai_generated: false,
+          rules: communityStrategy.rules || {},
+        };
+        
+        setStrategies(prev => {
+          // Avoid duplicates
+          const filtered = prev.filter(s => !s.id.startsWith("community_"));
+          return [virtualStrategy, ...filtered];
+        });
+        setSelectedStrategy(virtualStrategy.id);
+        
+        // Set dataset if available
+        if (communityStrategy.dataset) {
+          const matchingDataset = ALL_DATASETS.find(d => d.value === communityStrategy.dataset);
+          if (matchingDataset) {
+            setSymbol(communityStrategy.dataset);
+            setDataSourceMode("market");
+          }
+        }
+        
+        toast.success(`Strategy "${virtualStrategy.name}" loaded from community`);
+      } catch (e) {
+        console.error("Failed to parse community strategy:", e);
+        sessionStorage.removeItem("community_strategy");
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const strategyId = searchParams.get("strategy");
     if (strategyId && strategies.length > 0) setSelectedStrategy(strategyId);
@@ -195,11 +236,14 @@ const BacktestRunner = () => {
       .order("created_at", { ascending: false });
     if (error) { toast.error("Failed to load strategies"); return; }
     const list = data || [];
-    setStrategies(list);
-    if (list.length === 0) {
+    // Preserve any community strategy already loaded
+    const communityStrategies = strategies.filter(s => s.id.startsWith("community_"));
+    const merged = [...communityStrategies, ...list];
+    setStrategies(merged);
+    if (merged.length === 0) {
       setSelectedStrategy("");
-    } else if (!selectedStrategy || !list.find(s => s.id === selectedStrategy)) {
-      setSelectedStrategy(list[0].id);
+    } else if (!selectedStrategy || !merged.find(s => s.id === selectedStrategy)) {
+      setSelectedStrategy(merged[0].id);
     }
   };
 
