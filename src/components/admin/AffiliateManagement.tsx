@@ -36,6 +36,7 @@ interface WithdrawalRequest {
   status: string;
   admin_note: string | null;
   created_at: string;
+  processed_at: string | null;
   profile?: { display_name: string | null; email: string | null };
   affiliate?: { referral_code: string };
 }
