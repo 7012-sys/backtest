@@ -46,6 +46,17 @@ serve(async (req) => {
       // No body or invalid JSON — no referral code
     }
 
+    // Fallback to the stored referral on the user's profile when they signed up from a link
+    if (!referralCode) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("referred_by")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      referralCode = profile?.referred_by?.trim()?.toUpperCase() || null;
+    }
+
     console.log("Creating order for user:", user.id, "referral:", referralCode);
 
     let finalPricePaise = BASE_PRICE_PAISE;
