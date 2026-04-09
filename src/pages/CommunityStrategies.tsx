@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { useSubscription } from "@/hooks/useSubscription";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,10 +20,13 @@ import {
   Loader2,
   ThumbsUp,
   Trash2,
+  Crown,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { CommunityStrategyDetail } from "@/components/community/CommunityStrategyDetail";
+import { LimitReachedModal } from "@/components/ui/limit-reached-modal";
 
 interface CommunityStrategy {
   id: string;
@@ -40,6 +44,7 @@ interface CommunityStrategy {
 const CommunityStrategies = () => {
   const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [strategies, setStrategies] = useState<CommunityStrategy[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,6 +61,8 @@ const CommunityStrategies = () => {
       setUser(data.session?.user ?? null);
     });
   }, []);
+
+  const { isPro } = useSubscription(user?.id);
 
   useEffect(() => {
     fetchStrategies();
@@ -302,13 +309,26 @@ const CommunityStrategies = () => {
                         >
                           <Eye className="h-3 w-3 mr-1" /> View
                         </Button>
-                        <Button
-                          size="sm"
-                          className="flex-1 text-xs bg-accent text-accent-foreground hover:bg-accent/90"
-                          onClick={() => handleApplyStrategy(strategy)}
-                        >
-                          <Play className="h-3 w-3 mr-1" /> Apply
-                        </Button>
+                        {isPro ? (
+                          <Button
+                            size="sm"
+                            className="flex-1 text-xs bg-accent text-accent-foreground hover:bg-accent/90"
+                            onClick={() => handleApplyStrategy(strategy)}
+                          >
+                            <Play className="h-3 w-3 mr-1" /> Apply
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 text-xs opacity-70 cursor-not-allowed"
+                            onClick={() => setShowUpgradeModal(true)}
+                          >
+                            <Lock className="h-3 w-3 mr-1" />
+                            Apply
+                            <Crown className="h-3 w-3 ml-1 text-accent" />
+                          </Button>
+                        )}
                         {isAdmin && (
                           <Button
                             variant="destructive"
@@ -335,15 +355,29 @@ const CommunityStrategies = () => {
           strategy={selectedStrategy}
           open={!!selectedStrategy}
           onClose={() => setSelectedStrategy(null)}
-          onApply={() => handleApplyStrategy(selectedStrategy)}
+          onApply={() => {
+            if (isPro) {
+              handleApplyStrategy(selectedStrategy);
+            } else {
+              setShowUpgradeModal(true);
+            }
+          }}
           likeCount={likeCounts[selectedStrategy.id] || 0}
           isLiked={userLikes.has(selectedStrategy.id)}
           onToggleLike={() => handleToggleLike(selectedStrategy.id)}
           isLiking={likingId === selectedStrategy.id}
           isAdmin={isAdmin}
           onAdminDelete={() => handleAdminDelete(selectedStrategy.id)}
+          isPro={isPro}
         />
       )}
+
+      <LimitReachedModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        limitType="pro_feature"
+        featureName="Apply Community Strategy"
+      />
     </AppLayout>
   );
 };
