@@ -71,7 +71,7 @@ const AffiliateDashboard = () => {
       const [{ data: comms }, { data: wds }, { data: notifs }] = await Promise.all([
         supabase.from("commissions").select("*").eq("affiliate_id", affiliate.id).order("created_at", { ascending: false }),
         supabase.from("withdrawal_requests").select("*").eq("affiliate_id", affiliate.id).order("created_at", { ascending: false }),
-        supabase.from("affiliate_notifications").select("*").eq("user_id", affiliate.user_id).order("created_at", { ascending: false }),
+        supabase.from("affiliate_notifications").select("*").eq("affiliate_id", affiliate.id).order("created_at", { ascending: false }),
       ]);
       setCommissions(comms || []);
       setWithdrawals(wds || []);
