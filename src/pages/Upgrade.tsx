@@ -379,9 +379,10 @@ const Upgrade = () => {
                     <Gift className="h-3 w-3 mr-1" /> {discountPercent}% OFF Applied!
                   </Badge>
                 ) : (
-                  <Badge className="bg-muted/50 text-muted-foreground border-border mb-3">
-                    Have a referral code? Enter below
-                  </Badge>
+                  <div className="flex items-center gap-1.5 justify-center mb-3 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                    <Gift className="h-3.5 w-3.5 text-accent" />
+                    <span className="text-xs font-medium text-accent">Have a referral code? Get 50% OFF!</span>
+                  </div>
                 )}
                 <div className="flex items-baseline justify-center gap-2 mb-1">
                   <span className="text-xl text-muted-foreground line-through flex items-center">
