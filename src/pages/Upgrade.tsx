@@ -32,7 +32,7 @@ import {
 import { User } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { toast } from "sonner";
-import { getReferralCode, setReferralCookie } from "@/hooks/useReferral";
+import { getReferralCode, getReferralSource, setReferralCookie } from "@/hooks/useReferral";
 
 declare global {
   interface Window {

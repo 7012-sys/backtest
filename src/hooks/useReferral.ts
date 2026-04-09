@@ -39,7 +39,7 @@ export const useReferralDetection = () => {
     const ref = params.get("ref");
     
     if (ref) {
-      setReferralCookie(ref);
+      setReferralCookie(ref, "link");
       setReferralCode(ref);
       // Track the click
       trackClick(ref);
