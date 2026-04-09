@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Users, IndianRupee, Award, Settings, CheckCircle2, XCircle, Clock, UserPlus } from "lucide-react";
+import { Users, IndianRupee, Award, Settings, CheckCircle2, XCircle, Clock, UserPlus, Bell, Send } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Affiliate {
@@ -60,6 +61,12 @@ export const AffiliateManagement = () => {
   const [minWithdrawal, setMinWithdrawal] = useState("");
   const [allUsers, setAllUsers] = useState<{ user_id: string; display_name: string | null; email: string | null }[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
+
+  // Notification form state
+  const [notifAffiliateId, setNotifAffiliateId] = useState("");
+  const [notifType, setNotifType] = useState("general");
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifMessage, setNotifMessage] = useState("");
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -143,7 +150,7 @@ export const AffiliateManagement = () => {
     const { error } = await supabase.from("withdrawal_requests").update({ status, processed_at: new Date().toISOString() }).eq("id", id);
     if (error) { toast.error("Failed to update withdrawal"); return; }
 
-    // When marking as paid, update affiliate earnings
+    // When marking as paid, update affiliate earnings and send auto-notification
     if (status === "paid" && withdrawal) {
       const affiliate = affiliates.find(a => a.id === withdrawal.affiliate_id);
       if (affiliate) {
@@ -152,7 +159,27 @@ export const AffiliateManagement = () => {
           pending_earnings: Math.max(0, affiliate.pending_earnings - withdrawal.amount),
           updated_at: new Date().toISOString(),
         }).eq("id", withdrawal.affiliate_id);
+
+        // Auto-send payment notification
+        await supabase.from("affiliate_notifications").insert({
+          affiliate_id: withdrawal.affiliate_id,
+          user_id: withdrawal.user_id,
+          title: "Withdrawal Successful 🎉",
+          message: `Your withdrawal of ₹${withdrawal.amount.toLocaleString()} has been successfully processed to your UPI.`,
+          type: "payment_done",
+        });
       }
+    }
+
+    if (status === "rejected" && withdrawal) {
+      // Auto-send rejection notification
+      await supabase.from("affiliate_notifications").insert({
+        affiliate_id: withdrawal.affiliate_id,
+        user_id: withdrawal.user_id,
+        title: "Withdrawal Rejected",
+        message: `Your withdrawal request of ₹${withdrawal.amount.toLocaleString()} has been rejected. Please contact support for details.`,
+        type: "withdrawal_rejected",
+      });
     }
 
     toast.success(`Withdrawal ${status}`);
@@ -163,6 +190,33 @@ export const AffiliateManagement = () => {
     const newStatus = currentStatus === "suspended" ? "active" : "suspended";
     const { error } = await supabase.from("affiliates").update({ status: newStatus }).eq("id", id);
     if (!error) { toast.success(`Affiliate ${newStatus}`); fetchAll(); }
+  };
+
+  const handleSendNotification = async () => {
+    if (!notifAffiliateId || !notifTitle.trim() || !notifMessage.trim()) {
+      toast.error("Please fill in all notification fields");
+      return;
+    }
+    const aff = affiliates.find(a => a.id === notifAffiliateId);
+    if (!aff) { toast.error("Affiliate not found"); return; }
+
+    const { error } = await supabase.from("affiliate_notifications").insert({
+      affiliate_id: notifAffiliateId,
+      user_id: aff.user_id,
+      title: notifTitle,
+      message: notifMessage,
+      type: notifType,
+    });
+
+    if (error) {
+      toast.error("Failed to send notification");
+    } else {
+      toast.success("Notification sent!");
+      setNotifTitle("");
+      setNotifMessage("");
+      setNotifAffiliateId("");
+      setNotifType("general");
+    }
   };
 
   const totalPayouts = affiliates.reduce((s, a) => s + a.withdrawn_earnings, 0);
@@ -184,9 +238,10 @@ export const AffiliateManagement = () => {
       </div>
 
       <Tabs defaultValue="affiliates" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex flex-wrap">
           <TabsTrigger value="affiliates"><Users className="h-4 w-4 mr-1.5" /> Affiliates</TabsTrigger>
           <TabsTrigger value="withdrawals"><IndianRupee className="h-4 w-4 mr-1.5" /> Withdrawals</TabsTrigger>
+          <TabsTrigger value="notifications"><Bell className="h-4 w-4 mr-1.5" /> Notify</TabsTrigger>
           <TabsTrigger value="settings"><Settings className="h-4 w-4 mr-1.5" /> Settings</TabsTrigger>
         </TabsList>
 
@@ -234,6 +289,8 @@ export const AffiliateManagement = () => {
                       <TableHead>Referrals</TableHead>
                       <TableHead>Paid</TableHead>
                       <TableHead>Earnings</TableHead>
+                      <TableHead>Pending</TableHead>
+                      <TableHead>Withdrawn</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -248,6 +305,8 @@ export const AffiliateManagement = () => {
                         <TableCell>{a.total_referrals}</TableCell>
                         <TableCell>{a.total_paid_referrals}</TableCell>
                         <TableCell className="font-medium">₹{a.total_earnings.toLocaleString()}</TableCell>
+                        <TableCell className="text-yellow-600">₹{a.pending_earnings.toLocaleString()}</TableCell>
+                        <TableCell className="text-green-600">₹{a.withdrawn_earnings.toLocaleString()}</TableCell>
                         <TableCell>{statusBadge(a.status)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -262,7 +321,7 @@ export const AffiliateManagement = () => {
                       </TableRow>
                     ))}
                     {affiliates.length === 0 && (
-                      <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No affiliates yet</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">No affiliates yet</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -344,6 +403,56 @@ export const AffiliateManagement = () => {
                   </TableBody>
                 </Table>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2"><Bell className="h-5 w-5 text-accent" /> Send Notification</CardTitle>
+              <CardDescription>Send a message to a specific affiliate user</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 max-w-lg">
+              <div className="space-y-2">
+                <Label>Select Affiliate</Label>
+                <Select value={notifAffiliateId} onValueChange={setNotifAffiliateId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose affiliate..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {affiliates.map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.profile?.display_name || a.profile?.email || a.referral_code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Message Type</Label>
+                <Select value={notifType} onValueChange={setNotifType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="payment_done">Payment Done</SelectItem>
+                    <SelectItem value="withdrawal_rejected">Withdrawal Rejected</SelectItem>
+                    <SelectItem value="general">General Message</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input value={notifTitle} onChange={(e) => setNotifTitle(e.target.value)} placeholder="e.g. Payment Completed" maxLength={100} />
+              </div>
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <Textarea value={notifMessage} onChange={(e) => setNotifMessage(e.target.value)} placeholder="Enter your message..." maxLength={500} rows={3} />
+              </div>
+              <Button onClick={handleSendNotification} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                <Send className="h-4 w-4 mr-2" /> Send Notification
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
