@@ -89,7 +89,7 @@ serve(async (req) => {
     // Handle referral commission if applicable
     if (body.referral_code && body.affiliate_id) {
       try {
-        // Create referral record if not exists
+        // Check for existing referral record
         const { data: existingRef } = await supabaseAdmin
           .from("referrals")
           .select("id")
@@ -97,7 +97,34 @@ serve(async (req) => {
           .eq("affiliate_id", body.affiliate_id)
           .maybeSingle();
 
-        const referralId = existingRef?.id;
+        let referralId = existingRef?.id;
+
+        // Create referral record if it doesn't exist
+        if (!referralId) {
+          const { data: newRef, error: refErr } = await supabaseAdmin
+            .from("referrals")
+            .insert({
+              affiliate_id: body.affiliate_id,
+              referred_user_id: user.id,
+              referral_code: body.referral_code,
+              status: "signed_up",
+            })
+            .select("id")
+            .single();
+
+          if (refErr) {
+            console.error("Failed to create referral record:", refErr.message);
+          } else {
+            referralId = newRef.id;
+            console.log("Created referral record:", referralId);
+          }
+
+          // Also update profile referred_by
+          await supabaseAdmin
+            .from("profiles")
+            .update({ referred_by: body.referral_code })
+            .eq("user_id", user.id);
+        }
 
         if (referralId) {
           // Update referral status to converted
@@ -133,7 +160,7 @@ serve(async (req) => {
             status: "pending",
           });
 
-          // Update affiliate stats atomically
+          // Update affiliate stats atomically (paid referrals + earnings)
           await supabaseAdmin.rpc("increment_affiliate_stats", {
             _affiliate_id: body.affiliate_id,
             _commission_amount: commissionAmount,
