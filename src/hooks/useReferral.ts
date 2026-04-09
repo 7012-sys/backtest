@@ -76,19 +76,8 @@ export const useReferralDetection = () => {
 
 const trackClick = async (code: string) => {
   try {
-    // Look up affiliate by code
-    const { data: affiliate } = await supabase
-      .from("affiliates")
-      .select("id")
-      .eq("referral_code", code)
-      .eq("status", "active")
-      .single();
-
-    if (!affiliate) return;
-
-    await supabase.from("referral_clicks").insert({
-      affiliate_id: affiliate.id,
-      referral_code: code,
+    await supabase.functions.invoke("track-referral-click", {
+      body: { referral_code: code },
     });
   } catch (e) {
     // Silent fail for click tracking
