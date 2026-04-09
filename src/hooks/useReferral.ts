@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const REFERRAL_COOKIE_KEY = "tradetest_ref";
+const REFERRAL_SOURCE_KEY = "tradetest_ref_source";
 const REFERRAL_EXPIRY_DAYS = 30;
 
 export const setReferralCookie = (code: string) => {
