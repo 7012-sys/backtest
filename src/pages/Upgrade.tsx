@@ -120,10 +120,11 @@ const Upgrade = () => {
   const [discountPercent, setDiscountPercent] = useState(0);
   const [originalPrice] = useState(999);
 
-  // Check for existing referral on mount
+  // Only auto-fill referral code if user arrived via affiliate link
   useEffect(() => {
     const existing = getReferralCode();
-    if (existing) {
+    const source = getReferralSource();
+    if (existing && source === "link") {
       setReferralCodeInput(existing);
       void validateReferralCode(existing);
     }
