@@ -87,14 +87,38 @@ serve(async (req) => {
     }
 
     // Handle referral commission if applicable
-    if (body.referral_code && body.affiliate_id) {
+    let resolvedReferralCode: string | null = body.referral_code || null;
+    let resolvedAffiliateId: string | null = body.affiliate_id || null;
+
+    if (!resolvedReferralCode || !resolvedAffiliateId) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("referred_by")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      resolvedReferralCode = resolvedReferralCode || profile?.referred_by || null;
+
+      if (resolvedReferralCode && !resolvedAffiliateId) {
+        const { data: affiliate } = await supabaseAdmin
+          .from("affiliates")
+          .select("id")
+          .eq("referral_code", resolvedReferralCode)
+          .eq("status", "active")
+          .maybeSingle();
+
+        resolvedAffiliateId = affiliate?.id || null;
+      }
+    }
+
+    if (resolvedReferralCode && resolvedAffiliateId) {
       try {
         // Check for existing referral record
         const { data: existingRef } = await supabaseAdmin
           .from("referrals")
           .select("id")
           .eq("referred_user_id", user.id)
-          .eq("affiliate_id", body.affiliate_id)
+          .eq("affiliate_id", resolvedAffiliateId)
           .maybeSingle();
 
         let referralId = existingRef?.id;
@@ -104,9 +128,9 @@ serve(async (req) => {
           const { data: newRef, error: refErr } = await supabaseAdmin
             .from("referrals")
             .insert({
-              affiliate_id: body.affiliate_id,
+              affiliate_id: resolvedAffiliateId,
               referred_user_id: user.id,
-              referral_code: body.referral_code,
+              referral_code: resolvedReferralCode,
               status: "signed_up",
             })
             .select("id")
@@ -119,15 +143,13 @@ serve(async (req) => {
             console.log("Created referral record:", referralId);
           }
 
-          // Also update profile referred_by
           await supabaseAdmin
             .from("profiles")
-            .update({ referred_by: body.referral_code })
+            .update({ referred_by: resolvedReferralCode })
             .eq("user_id", user.id);
         }
 
         if (referralId) {
-          // Update referral status to converted
           await supabaseAdmin
             .from("referrals")
             .update({
@@ -137,7 +159,6 @@ serve(async (req) => {
             })
             .eq("id", referralId);
 
-          // Fetch commission settings
           const { data: settings } = await supabaseAdmin
             .from("affiliate_settings")
             .select("commission_percent")
@@ -148,25 +169,32 @@ serve(async (req) => {
           const amountPaid = body.amount_paid || 999;
           const commissionAmount = Math.round(amountPaid * commissionPercent / 100);
 
-          // Create commission record
-          await supabaseAdmin.from("commissions").insert({
-            affiliate_id: body.affiliate_id,
-            referral_id: referralId,
-            referred_user_id: user.id,
-            amount_paid: amountPaid,
-            commission_percent: commissionPercent,
-            commission_amount: commissionAmount,
-            plan_purchased: "pro",
-            status: "pending",
-          });
+          const { data: existingCommission } = await supabaseAdmin
+            .from("commissions")
+            .select("id")
+            .eq("affiliate_id", resolvedAffiliateId)
+            .eq("referred_user_id", user.id)
+            .maybeSingle();
 
-          // Update affiliate stats atomically (paid referrals + earnings)
-          await supabaseAdmin.rpc("increment_affiliate_stats", {
-            _affiliate_id: body.affiliate_id,
-            _commission_amount: commissionAmount,
-          });
+          if (!existingCommission) {
+            await supabaseAdmin.from("commissions").insert({
+              affiliate_id: resolvedAffiliateId,
+              referral_id: referralId,
+              referred_user_id: user.id,
+              amount_paid: amountPaid,
+              commission_percent: commissionPercent,
+              commission_amount: commissionAmount,
+              plan_purchased: "pro",
+              status: "pending",
+            });
 
-          console.log(`Commission of ₹${commissionAmount} created for affiliate ${body.affiliate_id}`);
+            await supabaseAdmin.rpc("increment_affiliate_stats", {
+              _affiliate_id: resolvedAffiliateId,
+              _commission_amount: commissionAmount,
+            });
+          }
+
+          console.log(`Commission of ₹${commissionAmount} created for affiliate ${resolvedAffiliateId}`);
         }
       } catch (commErr: any) {
         console.error("Commission tracking error (non-fatal):", commErr?.message);
